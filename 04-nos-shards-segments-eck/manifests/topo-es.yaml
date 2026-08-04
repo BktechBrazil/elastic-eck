@@ -1,0 +1,52 @@
+# topo-es — cluster para demonstrar alocação de shards/réplicas (Módulo 04)
+# 2 data nodes com heap reduzido para caber no lab de 16 GB.
+# ATENÇÃO: pare o lab-es antes (kubectl -n elastic delete elasticsearch lab-es).
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: topo-es
+spec:
+  version: 9.4.2
+  nodeSets:
+    - name: data
+      count: 2                      # 2 nós -> réplicas podem ser alocadas
+      config:
+        node.roles: ["master", "data", "ingest"]
+        node.store.allow_mmap: true
+      podTemplate:
+        spec:
+          containers:
+            - name: elasticsearch
+              env:
+                - name: ES_JAVA_OPTS
+                  value: -Xms1g -Xmx1g     # heap menor: 2 nós cabem no lab
+              resources:
+                requests:
+                  memory: 2Gi
+                  cpu: 500m
+                limits:
+                  memory: 2Gi
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            accessModes: [ReadWriteOnce]
+            resources:
+              requests:
+                storage: 10Gi
+            storageClassName: local-path
+# -----------------------------------------------------------------------------
+# EXEMPLO DE REFERÊNCIA (produção) — papéis dedicados com vários nodeSets.
+# Não aplique no lab de 16 GB; é só para ilustrar a tradução "topologia = lista de nodeSets".
+#
+#   nodeSets:
+#     - name: masters
+#       count: 3
+#       config: { node.roles: ["master"] }
+#     - name: hot
+#       count: 3
+#       config: { node.roles: ["data_hot","ingest"] }
+#     - name: warm
+#       count: 2
+#       config: { node.roles: ["data_warm"] }
+# -----------------------------------------------------------------------------

@@ -1,0 +1,104 @@
+# =====================================================================
+# Query DSL — cole no Kibana Dev Tools (Menu -> Dev Tools -> Console)
+# Base: dados de amostra kibana_sample_data_ecommerce e _logs
+# Execute cada bloco com o botão ▶ (ou Ctrl+Enter).
+# =====================================================================
+
+# --- 1. Buscar tudo (match_all) + paginação ---
+GET kibana_sample_data_ecommerce/_search
+{
+  "size": 5,
+  "query": { "match_all": {} }
+}
+
+# --- 2. Full-text: match (relevância) ---
+GET kibana_sample_data_ecommerce/_search
+{
+  "query": { "match": { "category": "Men's Clothing" } }
+}
+
+# --- 3. Term-level: term exato em campo keyword ---
+GET kibana_sample_data_ecommerce/_search
+{
+  "query": { "term": { "customer_gender": "MALE" } }
+}
+
+# --- 4. Range: faixa numérica / de datas ---
+GET kibana_sample_data_ecommerce/_search
+{
+  "query": {
+    "range": { "taxful_total_price": { "gte": 50, "lte": 100 } }
+  }
+}
+
+# --- 5. bool: combinando must / filter / must_not ---
+GET kibana_sample_data_ecommerce/_search
+{
+  "query": {
+    "bool": {
+      "must":     [ { "match": { "category": "Women's Shoes" } } ],
+      "filter":   [ { "range": { "taxful_total_price": { "gte": 40 } } } ],
+      "must_not": [ { "term":  { "customer_gender": "MALE" } } ]
+    }
+  }
+}
+
+# --- 6. Ordenação e seleção de campos (_source) ---
+GET kibana_sample_data_ecommerce/_search
+{
+  "size": 5,
+  "_source": ["order_id","customer_full_name","taxful_total_price"],
+  "sort": [ { "taxful_total_price": "desc" } ],
+  "query": { "match_all": {} }
+}
+
+# --- 7. Agregação metric: ticket médio geral ---
+GET kibana_sample_data_ecommerce/_search
+{
+  "size": 0,
+  "aggs": {
+    "ticket_medio": { "avg": { "field": "taxful_total_price" } }
+  }
+}
+
+# --- 8. Agregação bucket + metric aninhada: receita por categoria ---
+GET kibana_sample_data_ecommerce/_search
+{
+  "size": 0,
+  "aggs": {
+    "por_categoria": {
+      "terms": { "field": "category.keyword", "size": 5 },
+      "aggs": {
+        "receita": { "sum": { "field": "taxful_total_price" } }
+      }
+    }
+  }
+}
+
+# --- 9. date_histogram: pedidos por dia ---
+GET kibana_sample_data_ecommerce/_search
+{
+  "size": 0,
+  "aggs": {
+    "por_dia": {
+      "date_histogram": { "field": "order_date", "calendar_interval": "day" }
+    }
+  }
+}
+
+# --- 10. Nos web logs: status 404 nas últimas ocorrências ---
+GET kibana_sample_data_logs/_search
+{
+  "size": 5,
+  "query": { "bool": { "filter": [ { "term": { "response.keyword": "404" } } ] } },
+  "sort": [ { "@timestamp": "desc" } ]
+}
+
+# --- 11. cardinality: quantos produtos distintos? ---
+GET kibana_sample_data_ecommerce/_search
+{
+  "size": 0,
+  "aggs": {
+    "produtos_distintos": { "cardinality": { "field": "products.product_id" } }
+  }
+}

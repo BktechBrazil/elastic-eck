@@ -1,0 +1,21 @@
+# Kibana "quickstart" — interface do Elastic Stack (Módulo 01)
+# elasticsearchRef liga o Kibana ao cluster ES; o operator cuida de TLS e credenciais.
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: quickstart
+spec:
+  version: 9.4.2
+  count: 1
+  elasticsearchRef:
+    name: quickstart
+  podTemplate:
+    spec:
+      containers:
+        - name: kibana
+          resources:
+            requests:
+              memory: 1Gi
+              cpu: 500m
+            limits:
+              memory: 2Gi

@@ -1,0 +1,53 @@
+# Logstash via CRD Logstash do ECK — pipeline central beats -> filtro -> elasticsearch
+# O operator injeta as variáveis LAB_ES_ES_* a partir do elasticsearchRefs (clusterName: lab-es).
+apiVersion: logstash.k8s.elastic.co/v1alpha1
+kind: Logstash
+metadata:
+  name: lab-logstash
+  namespace: elastic
+spec:
+  count: 1
+  version: 9.4.2
+  elasticsearchRefs:
+    - name: lab-es
+      clusterName: lab-es          # gera env: LAB_ES_ES_HOSTS, LAB_ES_ES_USER, LAB_ES_ES_PASSWORD, LAB_ES_ES_SSL_CERTIFICATE_AUTHORITY
+  pipelines:
+    - pipeline.id: main
+      config.string: |
+        input {
+          beats { port => 5044 }
+        }
+        filter {
+          mutate { add_field => { "[origem]" => "logstash-lab" } }
+        }
+        output {
+          elasticsearch {
+            hosts    => [ "${LAB_ES_ES_HOSTS}" ]
+            user     => "${LAB_ES_ES_USER}"
+            password => "${LAB_ES_ES_PASSWORD}"
+            ssl_enabled                 => true
+            ssl_certificate_authorities => "${LAB_ES_ES_SSL_CERTIFICATE_AUTHORITY}"
+            index    => "logstash-lab-%{+YYYY.MM.dd}"
+          }
+        }
+  # Service para os Beats enviarem eventos (porta 5044)
+  services:
+    - name: beats
+      service:
+        spec:
+          type: ClusterIP
+          ports:
+            - port: 5044
+              name: filebeat
+              protocol: TCP
+              targetPort: 5044
+  podTemplate:
+    spec:
+      containers:
+        - name: logstash
+          resources:
+            requests:
+              memory: 1Gi
+              cpu: 500m
+            limits:
+              memory: 1536Mi

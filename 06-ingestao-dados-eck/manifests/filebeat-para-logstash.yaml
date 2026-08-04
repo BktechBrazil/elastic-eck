@@ -1,0 +1,78 @@
+# Variante do Filebeat que envia para o LOGSTASH (não direto ao ES).
+# Demonstra o fluxo Beats -> Logstash -> Elasticsearch.
+# O Service criado pelo CRD Logstash chama-se <nome>-ls-<service> => lab-logstash-ls-beats:5044
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: filebeat-ls
+  namespace: elastic
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: filebeat-ls
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces", "pods", "nodes"]
+    verbs: ["get", "watch", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: filebeat-ls
+subjects:
+  - kind: ServiceAccount
+    name: filebeat-ls
+    namespace: elastic
+roleRef:
+  kind: ClusterRole
+  name: filebeat-ls
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: beat.k8s.elastic.co/v1beta1
+kind: Beat
+metadata:
+  name: filebeat-ls
+  namespace: elastic
+spec:
+  type: filebeat
+  version: 9.4.2
+  # SEM elasticsearchRef: a saída vai para o Logstash, definida no config abaixo.
+  config:
+    filebeat.inputs:
+      - type: container
+        paths:
+          - /var/log/containers/*.log
+    output.elasticsearch.enabled: false
+    output.logstash:
+      hosts: ["lab-logstash-ls-beats:5044"]
+  daemonSet:
+    podTemplate:
+      spec:
+        serviceAccountName: filebeat-ls
+        automountServiceAccountToken: true
+        hostNetwork: true
+        dnsPolicy: ClusterFirstWithHostNet
+        securityContext:
+          runAsUser: 0
+        containers:
+          - name: filebeat
+            resources:
+              requests:
+                memory: 200Mi
+                cpu: 100m
+              limits:
+                memory: 300Mi
+            volumeMounts:
+              - name: varlogcontainers
+                mountPath: /var/log/containers
+              - name: varlogpods
+                mountPath: /var/log/pods
+        volumes:
+          - name: varlogcontainers
+            hostPath:
+              path: /var/log/containers
+          - name: varlogpods
+            hostPath:
+              path: /var/log/pods

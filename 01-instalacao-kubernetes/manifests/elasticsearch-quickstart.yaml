@@ -1,0 +1,39 @@
+# Elasticsearch "quickstart" — validação da plataforma (Módulo 01)
+# Dimensionado para o lab de 16 GB: 1 nó, heap 2 GB, request 4 GB.
+# Mantenha 'version' em sincronia com _assets/versions.env (STACK_VERSION).
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: quickstart
+spec:
+  version: 9.4.2
+  nodeSets:
+    - name: default
+      count: 1
+      config:
+        # Setamos vm.max_map_count no host (Módulo 00), então o mmap pode ficar habilitado
+        # e não precisamos de initContainer privilegiado.
+        node.store.allow_mmap: true
+      podTemplate:
+        spec:
+          containers:
+            - name: elasticsearch
+              env:
+                - name: ES_JAVA_OPTS
+                  value: -Xms2g -Xmx2g      # heap = 2 GB (<= 50% do request)
+              resources:
+                requests:
+                  memory: 4Gi
+                  cpu: "1"
+                limits:
+                  memory: 4Gi               # sem limite de CPU: permite bursts no lab
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 20Gi
+            storageClassName: local-path

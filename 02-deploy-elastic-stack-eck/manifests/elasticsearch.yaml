@@ -1,0 +1,42 @@
+# Cluster Elasticsearch do laboratório (lab-es) — Módulo 02
+# Configuração consciente para single-node de 16 GB.
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: lab-es
+spec:
+  version: 9.4.2
+  nodeSets:
+    - name: default
+      count: 1
+      config:
+        node.store.allow_mmap: true
+        # Em single-node, evitamos réplicas para o cluster ficar "green".
+        # (Isto é um default de conveniência do lab; em produção use réplicas >= 1.)
+      podTemplate:
+        spec:
+          containers:
+            - name: elasticsearch
+              env:
+                - name: ES_JAVA_OPTS
+                  value: -Xms2g -Xmx2g
+              resources:
+                requests:
+                  memory: 4Gi
+                  cpu: "1"
+                limits:
+                  memory: 4Gi
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            accessModes: [ReadWriteOnce]
+            resources:
+              requests:
+                storage: 20Gi
+            storageClassName: local-path
+---
+# Template de índice para os exercícios: 0 réplicas por padrão em single-node.
+# Aplique via Kibana Dev Tools ou curl (ver laboratorio.md dos próximos módulos):
+#   PUT _index_template/lab-defaults
+#   { "index_patterns": ["lab-*"], "template": { "settings": { "number_of_replicas": 0 } } }

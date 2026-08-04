@@ -1,0 +1,110 @@
+# ==============================================================================
+# REFERÊNCIA / AVANÇADO — Elastic Agent gerenciado por FLEET no ECK.
+# O Fleet Server é apenas outro recurso Agent (mode: fleet, fleetServerEnabled).
+# ==============================================================================
+# IMPORTANTE: para o Fleet funcionar, o Kibana precisa das configurações abaixo.
+# Adicione ao spec do seu Kibana (lab-kb) e reaplique:
+#
+#   spec:
+#     config:
+#       xpack.fleet.agents.elasticsearch.hosts: ["https://lab-es-es-http.elastic.svc:9200"]
+#       xpack.fleet.agents.fleet_server.hosts:  ["https://fleet-server-agent-http.elastic.svc:8220"]
+#       xpack.fleet.packages:
+#         - name: system
+#           version: latest
+#         - name: elastic_agent
+#           version: latest
+#         - name: fleet_server
+#           version: latest
+#       xpack.fleet.agentPolicies:
+#         - name: Fleet Server on ECK policy
+#           id: eck-fleet-server
+#           is_default_fleet_server: true
+#           package_policies:
+#             - name: fleet_server-1
+#               package: { name: fleet_server }
+#         - name: Elastic Agent on ECK policy
+#           id: eck-agent
+#           is_default: true
+#           package_policies:
+#             - name: system-1
+#               package: { name: system }
+# ------------------------------------------------------------------------------
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fleet-server
+  namespace: elastic
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: fleet-server
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "namespaces", "nodes"]
+    verbs: ["get", "watch", "list"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "create", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: fleet-server
+subjects:
+  - kind: ServiceAccount
+    name: fleet-server
+    namespace: elastic
+roleRef:
+  kind: ClusterRole
+  name: fleet-server
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: agent.k8s.elastic.co/v1alpha1
+kind: Agent
+metadata:
+  name: fleet-server
+  namespace: elastic
+spec:
+  version: 9.4.2
+  kibanaRef:
+    name: lab-kb
+  elasticsearchRefs:
+    - name: lab-es
+  mode: fleet
+  fleetServerEnabled: true
+  policyID: eck-fleet-server
+  deployment:
+    replicas: 1
+    podTemplate:
+      spec:
+        serviceAccountName: fleet-server
+        automountServiceAccountToken: true
+        securityContext:
+          runAsUser: 0
+---
+apiVersion: agent.k8s.elastic.co/v1alpha1
+kind: Agent
+metadata:
+  name: elastic-agent-fleet
+  namespace: elastic
+spec:
+  version: 9.4.2
+  kibanaRef:
+    name: lab-kb
+  fleetServerRef:
+    name: fleet-server
+  mode: fleet
+  policyID: eck-agent
+  daemonSet:
+    podTemplate:
+      spec:
+        serviceAccountName: elastic-agent
+        automountServiceAccountToken: true
+        hostNetwork: true
+        dnsPolicy: ClusterFirstWithHostNet
+        securityContext:
+          runAsUser: 0
+# (reutiliza o ServiceAccount/RBAC "elastic-agent" do elastic-agent-standalone.yaml)

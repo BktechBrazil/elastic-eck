@@ -1,0 +1,93 @@
+# =====================================================================
+# Mapping, Analyzers e Aliases — cole no Kibana Dev Tools
+# =====================================================================
+
+# --- 1. Ver o mapping que o Elastic criou sozinho (dynamic) ---
+GET kibana_sample_data_ecommerce/_mapping
+
+# --- 2. Ver um multi-field: category é text + category.keyword ---
+GET kibana_sample_data_ecommerce/_mapping/field/category
+
+# --- 3. Testar um analyzer com _analyze (ver os tokens) ---
+POST _analyze
+{ "analyzer": "standard", "text": "O Menino Correu Rápido!" }
+
+# --- 4. Analyzer de português (stemming + stopwords em PT) ---
+POST _analyze
+{ "analyzer": "portuguese", "text": "Os meninos estavam correndo" }
+
+# --- 5. Criar índice com MAPPING EXPLÍCITO + analyzer custom ---
+PUT catalogo
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "pt_custom": {
+          "type": "custom",
+          "char_filter": ["html_strip"],
+          "tokenizer": "standard",
+          "filter": ["lowercase", "portuguese_stop", "portuguese_stemmer"]
+        }
+      },
+      "filter": {
+        "portuguese_stop":    { "type": "stop", "stopwords": "_portuguese_" },
+        "portuguese_stemmer": { "type": "stemmer", "language": "light_portuguese" }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "nome":      { "type": "text", "analyzer": "pt_custom",
+                     "fields": { "keyword": { "type": "keyword" } } },
+      "sku":       { "type": "keyword" },
+      "preco":     { "type": "double" },
+      "criado_em": { "type": "date" },
+      "ativo":     { "type": "boolean" }
+    }
+  }
+}
+
+# --- 6. Indexar um documento e testar busca full-text ---
+POST catalogo/_doc?refresh=true
+{ "nome": "Tênis de corrida masculino", "sku": "TEN-001", "preco": 299.9, "ativo": true, "criado_em": "2026-01-10" }
+
+# procurar "correr" encontra "corrida" (stemming):
+GET catalogo/_search
+{ "query": { "match": { "nome": "correr" } } }
+
+# --- 7. term exato só funciona no keyword ---
+GET catalogo/_search
+{ "query": { "term": { "sku": "TEN-001" } } }
+
+# --- 8. ALIASES: criar e usar ---
+POST _aliases
+{ "actions": [ { "add": { "index": "catalogo", "alias": "produtos" } } ] }
+
+GET produtos/_search
+{ "query": { "match_all": {} } }
+
+# --- 9. Reindex zero-downtime: catalogo -> catalogo-v2 e troca de alias ---
+PUT catalogo-v2
+{ "mappings": { "properties": {
+  "nome": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+  "sku": { "type": "keyword" }, "preco": { "type": "double" },
+  "criado_em": { "type": "date" }, "ativo": { "type": "boolean" },
+  "marca": { "type": "keyword" }
+}}}
+
+POST _reindex
+{ "source": { "index": "catalogo" }, "dest": { "index": "catalogo-v2" } }
+
+# troca atômica do alias (a aplicação nunca para de ler "produtos"):
+POST _aliases
+{ "actions": [
+  { "remove": { "index": "catalogo",    "alias": "produtos" } },
+  { "add":    { "index": "catalogo-v2", "alias": "produtos" } }
+] }
+
+# --- 10. Filtered alias (embute um filtro) ---
+POST _aliases
+{ "actions": [ { "add": {
+  "index": "catalogo-v2", "alias": "produtos-ativos",
+  "filter": { "term": { "ativo": true } }
+} } ] }
