@@ -1,0 +1,50 @@
+# REFERÊNCIA — topologia hot-warm no ECK (não aplicar no lab de 16 GB).
+# Mostra como os tiers de temperatura do ILM viram nodeSets distintos.
+# A ação "allocate" do ILM (fase warm) move os shards para os nós data_warm.
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: hotwarm-es
+spec:
+  version: 9.4.2
+  nodeSets:
+    # ---- Tier HOT: dado novo, muita escrita/leitura (SSD, mais CPU) ----
+    - name: hot
+      count: 2
+      config:
+        node.roles: ["master", "data_hot", "data_content", "ingest"]
+        node.store.allow_mmap: true
+      podTemplate:
+        spec:
+          containers:
+            - name: elasticsearch
+              env: [{ name: ES_JAVA_OPTS, value: -Xms2g -Xmx2g }]
+              resources:
+                requests: { memory: 4Gi, cpu: "1" }
+                limits:   { memory: 4Gi }
+      volumeClaimTemplates:
+        - metadata: { name: elasticsearch-data }
+          spec:
+            accessModes: [ReadWriteOnce]
+            resources: { requests: { storage: 30Gi } }
+            storageClassName: local-path      # em produção: StorageClass de SSD rápido
+    # ---- Tier WARM: dado antigo, só leitura (discos maiores/baratos) ----
+    - name: warm
+      count: 1
+      config:
+        node.roles: ["data_warm"]
+        node.store.allow_mmap: true
+      podTemplate:
+        spec:
+          containers:
+            - name: elasticsearch
+              env: [{ name: ES_JAVA_OPTS, value: -Xms2g -Xmx2g }]
+              resources:
+                requests: { memory: 4Gi, cpu: "500m" }
+                limits:   { memory: 4Gi }
+      volumeClaimTemplates:
+        - metadata: { name: elasticsearch-data }
+          spec:
+            accessModes: [ReadWriteOnce]
+            resources: { requests: { storage: 100Gi } }
+            storageClassName: local-path      # em produção: StorageClass de HDD/econômico

@@ -1,0 +1,35 @@
+# Cluster do lab com o papel de nó "ml" habilitado (Módulo 09).
+# Heap e memória maiores porque ML consome RAM ALÉM do heap da JVM.
+# ATENÇÃO (16 GB): rode isolado; pare coletores/outros clusters antes.
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: lab-es
+spec:
+  version: 9.4.2
+  nodeSets:
+    - name: default
+      count: 1
+      config:
+        # 'ml' habilita jobs de Machine Learning neste nó.
+        node.roles: ["master", "data", "ingest", "ml", "remote_cluster_client"]
+        node.store.allow_mmap: true
+      podTemplate:
+        spec:
+          containers:
+            - name: elasticsearch
+              env:
+                - name: ES_JAVA_OPTS
+                  value: -Xms3g -Xmx3g          # heap 3 GB
+              resources:
+                requests:
+                  memory: 6Gi                    # 6 GB: heap (3G) + ML + overhead
+                  cpu: "2"
+                limits:
+                  memory: 6Gi
+      volumeClaimTemplates:
+        - metadata: { name: elasticsearch-data }
+          spec:
+            accessModes: [ReadWriteOnce]
+            resources: { requests: { storage: 20Gi } }
+            storageClassName: local-path

@@ -1,0 +1,74 @@
+# =====================================================================
+# ILM + Data Streams — cole no Kibana Dev Tools
+# Política acelerada (minutos) para VER as transições no laboratório.
+# =====================================================================
+
+# --- 1. Criar a política de ILM (hot -> warm -> delete) ---
+PUT _ilm/policy/lab-logs-policy
+{
+  "policy": {
+    "phases": {
+      "hot": {
+        "actions": {
+          "rollover": { "max_primary_shard_size": "1gb", "max_age": "5m" },
+          "set_priority": { "priority": 100 }
+        }
+      },
+      "warm": {
+        "min_age": "2m",
+        "actions": {
+          "forcemerge": { "max_num_segments": 1 },
+          "set_priority": { "priority": 50 },
+          "allocate": { "number_of_replicas": 0 }
+        }
+      },
+      "delete": {
+        "min_age": "10m",
+        "actions": { "delete": {} }
+      }
+    }
+  }
+}
+
+# --- 2. Index template com DATA STREAM apontando para a política ---
+PUT _index_template/lab-logs-template
+{
+  "index_patterns": ["lab-logs-*"],
+  "data_stream": {},
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "index.lifecycle.name": "lab-logs-policy"
+    },
+    "mappings": {
+      "properties": {
+        "@timestamp": { "type": "date" },
+        "mensagem":   { "type": "text" },
+        "nivel":      { "type": "keyword" }
+      }
+    }
+  }
+}
+
+# --- 3. Criar o data stream indexando o primeiro documento ---
+POST lab-logs-app/_doc
+{ "@timestamp": "2026-08-04T12:00:00Z", "nivel": "INFO", "mensagem": "app iniciada" }
+
+# --- 4. Ver os índices de apoio (.ds-lab-logs-app-...) ---
+GET _data_stream/lab-logs-app
+
+# --- 5. Forçar um rollover manual (sem esperar o limite) ---
+POST lab-logs-app/_rollover
+
+# --- 6. Acompanhar a fase atual do ILM em cada índice de apoio ---
+GET lab-logs-app/_ilm/explain
+
+# --- 7. Indexar mais dados e observar as fases mudarem ao longo dos minutos ---
+POST lab-logs-app/_doc
+{ "@timestamp": "2026-08-04T12:05:00Z", "nivel": "ERROR", "mensagem": "falha X" }
+
+# (repita o GET _ilm/explain a cada 1-2 min: hot -> warm -> delete)
+
+# --- 8. Ver a política e onde está aplicada ---
+GET _ilm/policy/lab-logs-policy

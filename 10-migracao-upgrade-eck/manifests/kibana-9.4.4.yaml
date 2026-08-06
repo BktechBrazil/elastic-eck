@@ -1,0 +1,17 @@
+# lab-kb atualizado para 9.4.4 (Módulo 10). Aplique DEPOIS do Elasticsearch.
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: lab-kb
+spec:
+  version: 9.4.4          # <-- era 9.4.2 (nunca mais novo que o ES)
+  count: 1
+  elasticsearchRef:
+    name: lab-es
+  podTemplate:
+    spec:
+      containers:
+        - name: kibana
+          resources:
+            requests: { memory: 1Gi, cpu: 500m }
+            limits:   { memory: 2Gi }
