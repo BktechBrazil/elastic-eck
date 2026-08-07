@@ -65,7 +65,7 @@
 - [x] **Módulo 01:** Instalação do Kubernetes & ECK
 - [x] **Módulo 02:** Deploy Elastic Stack via ECK
 - [x] **Módulo 03:** Query DSL
-- [ ] **Módulo 04:** Nós, Shards e Segments
+- [x] **Módulo 04:** Nós, Shards e Segments
 - [ ] **Módulo 05:** Index Settings, Mapping & Analyzers
 - [ ] **Módulo 06:** Ingestão de Dados & Elastic Agent
 - [ ] **Módulo 07:** Kibana & Dashboards
@@ -74,4 +74,3 @@
 - [ ] **Módulo 10:** Migração & Upgrade Declarativo
 - [ ] **Módulo 11:** Capacity Planning
 - [ ] **Módulo 12:** Elastic GenAI
-
