@@ -36,6 +36,17 @@
 | 07/08/2026 10:11 | Módulo 01 | `--address 0.0.0.0 service/quickstart-kb-http 5601` | Conexões recebidas com sucesso no Kibana (`Handling connection for 5601`). | 🟢 OK |
 | 07/08/2026 10:11 | Módulo 01 | Checklist final de validação | Nó `eck-lab` (Ready), `elastic-operator-0` (Running), 12 CRDs e clusters ES/KB com HEALTH `green`. | 🟢 OK |
 | 07/08/2026 10:14 | Módulo 02 | `get elasticsearch,statefulset...` (Passo 1-3) | Inspeção dos objetos criados pelo operator (16 secrets, PVC 20GB, StatefulSet). Teste de deleção de pod (`delete pod`) iniciado. | 🟢 OK |
+| 07/08/2026 10:25 | Módulo 02 | Reconciliação do pod (Passo 3) | Pod `quickstart-es-default-0` deletado, recriado automaticamente pelo StatefulSet (Pending → Init → Running). Autocura validada. | 🟢 OK |
+| 07/08/2026 10:25 | Módulo 02 | `kubectl apply -n elastic -f manifests/...` (Passo 4) | Cluster `lab-es` e `lab-kb` criados com sucesso. Pods subindo normalmente. | 🟢 OK |
+| 07/08/2026 10:25 | Módulo 02 | `port-forward service/lab-es-es-http 9200 &` (Passo 5) | Erro `address already in use` (port-forward do Módulo 01 ainda ativo). Corrigido com `pkill -f "port-forward" || true`. | 🟢 Corrigido |
+| 07/08/2026 10:25 | Módulo 02 | `/_cluster/health` (Passo 5 — após pkill) | Cluster `lab-es` respondeu com `status: green`, 43 shards ativos, 0 não-atribuídos. | 🟢 OK |
+| 07/08/2026 10:41 | Módulo 02 | `curl --cacert ca.crt https://localhost:9200` (Passo 6) | Erro `SSL: no alternative certificate subject name matches target host name 'localhost'`. Comportamento correto de TLS: cert assinado para hostnames internos do K8s, não para `localhost`. Documentado no guia com `--resolve` como alternativa. | 🟢 Documentado |
+| 07/08/2026 10:42 | Módulo 02 | `openssl + curl --resolve` (Passo 6) | Erro `syntax error near unexpected token newline`: comandos dentro de blockquote Markdown copiados com `> ` que o bash interpretou como redirecionamento. Corrigido no guia — comandos movidos para blocos de código independentes em linha única. | 🟢 Corrigido |
+| 07/08/2026 10:44 | Módulo 02 | `openssl` + `curl --cacert --resolve` (Passo 6) | SANs confirmados: `lab-es-es-http.elastic.svc`, `*.lab-es-es-default.elastic.svc`, etc. TLS validado com CA sem `-k` — cluster `lab-es` respondeu com `name: lab-es-es-default-0`. | 🟢 OK |
+| 07/08/2026 11:02 | Módulo 02 | `port-forward service/lab-kb-http 5601` (Passo 7) | Erro `services "lab-kb-http" not found`. O operador ECK nomeou o serviço como `lab-kb-kb-http`. Ajustado no `laboratorio.md`. | 🟢 Corrigido |
+| 07/08/2026 11:03 | Módulo 02 | `port-forward service/lab-kb-kb-http 5601` (Passo 7) | Túnel aberto na porta 5601 (0.0.0.0). Acesso ao Kibana estabelecido. | 🟢 OK |
+| 07/08/2026 11:05 | Módulo 02 | Checklist final (`get elasticsearch, kibana`) | Recursos `lab-es` e `lab-kb` retornaram HEALTH `green`. | 🟢 OK |
+| 07/08/2026 11:14 | Módulo 02 | `curl ... _cat/indices | grep sample` (Passo 8) | Ingestão dos dados de amostra confirmada (`kibana_sample_data_ecommerce` com 4.675 docs). | 🟢 OK |
 
 ---
 
@@ -43,7 +54,7 @@
 
 - [x] **Módulo 00:** Preparação de Ambiente
 - [x] **Módulo 01:** Instalação do Kubernetes & ECK
-- [ ] **Módulo 02:** Deploy Elastic Stack via ECK
+- [x] **Módulo 02:** Deploy Elastic Stack via ECK
 - [ ] **Módulo 03:** Query DSL
 - [ ] **Módulo 04:** Nós, Shards e Segments
 - [ ] **Módulo 05:** Index Settings, Mapping & Analyzers

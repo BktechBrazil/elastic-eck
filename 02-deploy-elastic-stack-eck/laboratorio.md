@@ -134,10 +134,28 @@ curl -k -u "elastic:$PASSWORD" https://localhost:9200/_cluster/health?pretty
 
 ### Passo 6 — Validar TLS com a CA (sem `-k`)
 
+Extraia o certificado do servidor (que contém os SANs) e a CA pública:
+
 ```bash
-kubectl -n elastic get secret lab-es-es-http-certs-public \
-  -o go-template='{{index .data "ca.crt" | base64decode}}' > ca.crt
-curl --cacert ca.crt -u "elastic:$PASSWORD" https://localhost:9200
+kubectl -n elastic get secret lab-es-es-http-certs-public -o go-template='{{index .data "ca.crt" | base64decode}}' > ca.crt
+kubectl -n elastic get secret lab-es-es-http-certs-public -o go-template='{{index .data "tls.crt" | base64decode}}' > tls.crt
+```
+
+Veja os SANs do certificado do servidor:
+
+```bash
+openssl x509 -in tls.crt -noout -text | grep -A5 "Subject Alternative"
+```
+
+> **ℹ️ Limitação do `port-forward` com CA:**
+> O certificado TLS é assinado para os hostnames internos do Kubernetes (ex: `lab-es-es-http.elastic.svc`), **não para `localhost`**. Por isso o `curl --cacert` falha com `SSL: no alternative certificate subject name matches target host name 'localhost'` — isso é **comportamento correto do TLS**.
+>
+> Em produção o acesso seria pelo hostname interno e o TLS funcionaria perfeitamente. Para fins de laboratório, use a flag `-k` (Passo 5) ou o `--resolve` abaixo.
+
+Use `--resolve` para mapear o hostname do certificado para `127.0.0.1` (em **uma linha só**, sem `\`):
+
+```bash
+curl --cacert ca.crt --resolve "lab-es-es-http.elastic.svc:9200:127.0.0.1" -u "elastic:$PASSWORD" https://lab-es-es-http.elastic.svc:9200
 ```
 
 ---
