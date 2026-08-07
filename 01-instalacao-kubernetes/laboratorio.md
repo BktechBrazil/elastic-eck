@@ -3,12 +3,28 @@
 > **Pré-requisito:** Módulo 00 concluído (swap off, sysctl, containerd).
 > **Tempo estimado:** 30–45 minutos.
 
-Comandos com `$` rodam na **VM**. As versões vêm de [`../_assets/versions.env`](../_assets/versions.env) — carregue-as:
+Comandos com `$` rodam na **VM**. As versões do curso são centralizadas em `_assets/versions.env`.
+
+Se você clonou o repositório na VM, carregue-as navegando até a pasta do módulo:
 
 ```bash
 source ../_assets/versions.env   # define ECK_VERSION, STACK_VERSION, K8S_VERSION...
 echo "ECK=$ECK_VERSION  STACK=$STACK_VERSION  K8S=$K8S_VERSION"
 ```
+
+> **Nota:** Caso esteja executando os comandos diretamente sem o repositório clonado na VM, você pode criar o arquivo abrindo com o editor (`nano _assets/versions.env`) ou executando os comandos de `echo` abaixo (à prova de falhas de cola via SSH):
+>
+> ```bash
+> mkdir -p _assets
+> echo 'export ECK_VERSION="3.4.1"' > _assets/versions.env
+> echo 'export STACK_VERSION="9.4.2"' >> _assets/versions.env
+> echo 'export K8S_VERSION="1.31"' >> _assets/versions.env
+> echo 'export ECK_NAMESPACE="elastic-system"' >> _assets/versions.env
+> echo 'export LAB_NAMESPACE="elastic"' >> _assets/versions.env
+> 
+> source _assets/versions.env
+> echo "ECK=$ECK_VERSION  STACK=$STACK_VERSION  K8S=$K8S_VERSION"
+> ```
 
 ---
 
@@ -36,6 +52,13 @@ O `--pod-network-cidr` precisa combinar com o CNI (Calico usa `192.168.0.0/16` p
 ```bash
 sudo kubeadm init --pod-network-cidr=192.168.0.0/16
 ```
+
+> **Dica:** Se o preflight check do `kubeadm init` indicar erro de `conntrack not found` (comum em imagens minimalistas de cloud), instale a dependência com 
+
+```bash
+sudo apt-get install -y conntrack socat`
+```
+E execute o comando novamente.
 
 Ao terminar, o `kubeadm` imprime instruções. Guarde-as, mas siga as do próximo passo.
 
@@ -142,6 +165,76 @@ kubectl -n ${ECK_NAMESPACE} logs statefulset/elastic-operator | tail -5
 
 ```bash
 kubectl create namespace ${LAB_NAMESPACE}
+```
+
+> **Nota:** Caso esteja executando os comandos sem ter clonado o repositório na VM, crie a pasta `manifests/` e os arquivos YAML executando os comandos abaixo:
+>
+> ```bash
+> mkdir -p manifests
+> 
+> cat <<'EOF' > manifests/elasticsearch-quickstart.yaml
+> apiVersion: elasticsearch.k8s.elastic.co/v1
+> kind: Elasticsearch
+> metadata:
+>   name: quickstart
+> spec:
+>   version: 9.4.2
+>   nodeSets:
+>     - name: default
+>       count: 1
+>       config:
+>         node.store.allow_mmap: true
+>       podTemplate:
+>         spec:
+>           containers:
+>             - name: elasticsearch
+>               env:
+>                 - name: ES_JAVA_OPTS
+>                   value: -Xms2g -Xmx2g
+>               resources:
+>                 requests:
+>                   memory: 4Gi
+>                   cpu: "1"
+>                 limits:
+>                   memory: 4Gi
+>       volumeClaimTemplates:
+>         - metadata:
+>             name: elasticsearch-data
+>           spec:
+>             accessModes:
+>               - ReadWriteOnce
+>             resources:
+>               requests:
+>                 storage: 20Gi
+>             storageClassName: local-path
+> EOF
+> 
+> cat <<'EOF' > manifests/kibana-quickstart.yaml
+> apiVersion: kibana.k8s.elastic.co/v1
+> kind: Kibana
+> metadata:
+>   name: quickstart
+> spec:
+>   version: 9.4.2
+>   count: 1
+>   elasticsearchRef:
+>     name: quickstart
+>   podTemplate:
+>     spec:
+>       containers:
+>         - name: kibana
+>           resources:
+>             requests:
+>               memory: 1Gi
+>               cpu: 500m
+>             limits:
+>               memory: 2Gi
+> EOF
+> ```
+
+Aplique os manifests:
+
+```bash
 kubectl apply -n ${LAB_NAMESPACE} -f manifests/elasticsearch-quickstart.yaml
 kubectl apply -n ${LAB_NAMESPACE} -f manifests/kibana-quickstart.yaml
 ```
@@ -149,7 +242,8 @@ kubectl apply -n ${LAB_NAMESPACE} -f manifests/kibana-quickstart.yaml
 Acompanhe até ficar `Ready`/`green`:
 
 ```bash
-kubectl -n ${LAB_NAMESPACE} get elasticsearch,kibana -w
+kubectl -n ${LAB_NAMESPACE} get elasticsearch -w
+kubectl -n ${LAB_NAMESPACE} get kibana -w
 # ES: HEALTH green (ou yellow em single-node) · Kibana: HEALTH green
 ```
 
@@ -163,19 +257,24 @@ echo "Senha do elastic: $PASSWORD"
 
 ### Passo 12 — Acessar o Elasticsearch e o Kibana
 
-Em um terminal, exponha o ES e teste:
+Em um terminal na VM, exponha o Elasticsearch e valide a API:
 
 ```bash
 kubectl -n ${LAB_NAMESPACE} port-forward service/quickstart-es-http 9200 &
+sleep 2
 curl -k -u "elastic:$PASSWORD" https://localhost:9200      # responde com nome/versão do cluster
 ```
 
-Em outro terminal, exponha o Kibana e abra no navegador:
+Para acessar o Kibana pelo seu navegador local a partir de uma **VM remota (Contabo / Cloud)**, exponha o serviço escutando em todas as interfaces (`--address 0.0.0.0`):
 
 ```bash
-kubectl -n ${LAB_NAMESPACE} port-forward service/quickstart-kb-http 5601
-# abra https://localhost:5601  (usuário: elastic / senha: $PASSWORD)
+kubectl -n ${LAB_NAMESPACE} port-forward --address 0.0.0.0 service/quickstart-kb-http 5601 &
 ```
+
+> **Acesso no Navegador:**
+> - **VM Remota / Cloud:** Abra `https://<IP_DA_SUA_VM>:5601` (aceite o aviso de certificado autoassinado HTTPS).
+> - **VM Local (VirtualBox / KVM):** Abra `https://localhost:5601`.
+> - **Credenciais de Login:** Usuário `elastic` · Senha: `$PASSWORD` (obtida no Passo 11).
 
 ---
 
