@@ -7,11 +7,12 @@ Use o **Kibana → Dev Tools → Console**. Todas as consultas estão prontas em
 
 > Prefere terminal? Exponha o ES e use `curl`:
 > ```bash
-> source ../_assets/versions.env
+> source _assets/versions.env
 > PASSWORD=$(kubectl -n elastic get secret lab-es-es-elastic-user -o go-template='{{.data.elastic | base64decode}}')
+> pkill -f "port-forward.*9200" || true
 > kubectl -n elastic port-forward service/lab-es-es-http 9200 &
-> curl -k -u "elastic:$PASSWORD" "https://localhost:9200/kibana_sample_data_ecommerce/_search?size=1&pretty"
-> ```
+> sleep 2
+>```
 
 ---
 

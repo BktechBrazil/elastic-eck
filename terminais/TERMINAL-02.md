@@ -275,3 +275,9 @@ lab-kb   green    1       9.4.2     38m
                                  Dload  Upload   Total   Spent    Left  Speed
   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0Handling connection for 9200
 100   468    0   468    0     0   6911      0 --:--:-- --:--:-- --:--:--  6985
+root@vmi3487682:~# curl -k -u "elastic:$PASSWORD" https://localhost:9200/_cat/indices?v | grep sample
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0Handling connection for 9200
+100   624    0   624    0     0   8230      0 --:--:-- --:--:-- --:--:--  8320
+yellow open   kibana_sample_data_ecommerce                    rQiXec_RToWmsvLvBYCnbA   1   1       4675            0      4.1mb          4.1mb        4.1mb

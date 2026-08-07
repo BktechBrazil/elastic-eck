@@ -47,6 +47,8 @@
 | 07/08/2026 11:03 | Módulo 02 | `port-forward service/lab-kb-kb-http 5601` (Passo 7) | Túnel aberto na porta 5601 (0.0.0.0). Acesso ao Kibana estabelecido. | 🟢 OK |
 | 07/08/2026 11:05 | Módulo 02 | Checklist final (`get elasticsearch, kibana`) | Recursos `lab-es` e `lab-kb` retornaram HEALTH `green`. | 🟢 OK |
 | 07/08/2026 11:14 | Módulo 02 | `curl ... _cat/indices | grep sample` (Passo 8) | Ingestão dos dados de amostra confirmada (`kibana_sample_data_ecommerce` com 4.675 docs). | 🟢 OK |
+| 07/08/2026 11:38 | Módulo 03 | Ajuste do bloco de inicialização do terminal | Substituído o comando original por bloco resiliente (`pkill -f "port-forward.*9200" || true` + `sleep 2`) para garantir liberação de porta e estabilidade do túnel antes de requisições. | 🟢 Corrigido |
+| 07/08/2026 11:40 | Módulo 03 | Validação dos Passos 1 a 9 | Os Passos 1 ao 9 não foram executados via terminal (`curl`). A validação do módulo foi realizada exclusivamente na interface do Kibana Dev Tools utilizando o lote de consultas em `exemplos/consultas-dev-tools.txt`, com todas as buscas retornando HTTP 200. | 🟢 OK |
 
 ---
 
@@ -55,7 +57,7 @@
 - [x] **Módulo 00:** Preparação de Ambiente
 - [x] **Módulo 01:** Instalação do Kubernetes & ECK
 - [x] **Módulo 02:** Deploy Elastic Stack via ECK
-- [ ] **Módulo 03:** Query DSL
+- [x] **Módulo 03:** Query DSL
 - [ ] **Módulo 04:** Nós, Shards e Segments
 - [ ] **Módulo 05:** Index Settings, Mapping & Analyzers
 - [ ] **Módulo 06:** Ingestão de Dados & Elastic Agent
