@@ -49,6 +49,13 @@
 | 07/08/2026 11:14 | Módulo 02 | `curl ... _cat/indices | grep sample` (Passo 8) | Ingestão dos dados de amostra confirmada (`kibana_sample_data_ecommerce` com 4.675 docs). | 🟢 OK |
 | 07/08/2026 11:38 | Módulo 03 | Ajuste do bloco de inicialização do terminal | Substituído o comando original por bloco resiliente (`pkill -f "port-forward.*9200" || true` + `sleep 2`) para garantir liberação de porta e estabilidade do túnel antes de requisições. | 🟢 Corrigido |
 | 07/08/2026 11:40 | Módulo 03 | Validação dos Passos 1 a 9 | Os Passos 1 ao 9 não foram executados via terminal (`curl`). A validação do módulo foi realizada exclusivamente na interface do Kibana Dev Tools utilizando o lote de consultas em `exemplos/consultas-dev-tools.txt`, com todas as buscas retornando HTTP 200. | 🟢 OK |
+| 07/08/2026 14:26 | Módulo 04 | Inicialização (Pré-requisitos) | Erro `secrets not found` indicou ausência do cluster `lab-es`. Adicionada Etapa 0 no início do laboratório para garantir de forma idempotente que o cluster do Módulo 02 esteja em execução antes de capturar senhas. | 🟢 Corrigido |
+| 07/08/2026 14:32 | Módulo 04 | Passo 3 (Criar índice loja) | Erro HTTP 405 (`Incorrect HTTP method for uri [/]`) causado pela estrutura do `alias es` no `curl`[cite: 2]. Atualizado o `laboratorio.md` para utilizar chamadas `curl` explícitas[cite: 1, 2]. | 🟢 Corrigido |
+| 07/08/2026 14:40 | Módulo 04 | Passo 4 (Corrigir em single-node) | Erro HTTP 405 ao tentar alterar réplicas usando `alias es`[cite: 2]. Atualizado o `laboratorio.md` para chamada `curl` explícita[cite: 1]. | 🟢 Corrigido |
+| 07/08/2026 14:42 | Módulo 04 | Passo 5 (Cluster 2 nós) | Erro `path "manifests/topo-es.yaml" does not exist`. Adicionada a criação automática do manifesto via HEREDOC no `laboratorio.md`. | 🟢 Corrigido |
+| 07/08/2026 14:48 | Módulo 04 | Passo 6 (Criar índice loja2 no topo-es) | Erro HTTP 405 ao tentar criar `loja2` usando `alias es2`. Atualizado o `laboratorio.md` para chamada `curl` explícita na porta 9201[cite: 1]. | 🟢 Corrigido |
+| 07/08/2026 14:55 | Módulo 04 | Passo 9 (Forcemerge de segmentos no loja2) | Erro HTTP 405 ao executar `_forcemerge` usando `alias es2`[cite: 1]. Atualizado o `laboratorio.md` para chamada `curl` explícita na porta 9201[cite: 1]. | 🟢 Corrigido |
+| 07/08/2026 15:00 | Módulo 04 | Voltar ao ambiente base (Limpeza) | Erro `path "../02-deploy-elastic-stack-eck/manifests/elasticsearch.yaml" does not exist`[cite: 1]. Atualizado o roteiro do laboratório para o caminho local `manifests/elasticsearch.yaml`[cite: 1]. | 🟢 Corrigido |
 
 ---
 
