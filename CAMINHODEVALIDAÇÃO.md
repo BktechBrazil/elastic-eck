@@ -56,6 +56,20 @@
 | 07/08/2026 14:48 | Módulo 04 | Passo 6 (Criar índice loja2 no topo-es) | Erro HTTP 405 ao tentar criar `loja2` usando `alias es2`. Atualizado o `laboratorio.md` para chamada `curl` explícita na porta 9201[cite: 1]. | 🟢 Corrigido |
 | 07/08/2026 14:55 | Módulo 04 | Passo 9 (Forcemerge de segmentos no loja2) | Erro HTTP 405 ao executar `_forcemerge` usando `alias es2`[cite: 1]. Atualizado o `laboratorio.md` para chamada `curl` explícita na porta 9201[cite: 1]. | 🟢 Corrigido |
 | 07/08/2026 15:00 | Módulo 04 | Voltar ao ambiente base (Limpeza) | Erro `path "../02-deploy-elastic-stack-eck/manifests/elasticsearch.yaml" does not exist`[cite: 1]. Atualizado o roteiro do laboratório para o caminho local `manifests/elasticsearch.yaml`[cite: 1]. | 🟢 Corrigido |
+| 10/08/2026 08:45 | Módulo 05 | Passos 1 a 10 (Mapping, Analyzers, Aliases e Reindex) | Todos os códigos foram testados no Kibana Dev Tools e retornaram código 200 | 🟢 OK |
+| 10/08/2026 08:49 | Módulo 06 | `kubectl get crd | grep -E 'beats|agents|logstashes'` | CRDs de ingestão confirmados e ativos no cluster | 🟢 OK |
+| 10/08/2026 08:52 | Módulo 06 | `cat << 'EOF' > manifests/filebeat.yaml && kubectl apply -f manifests/filebeat.yaml` | Criado o manifesto filebeat.yaml e validado com status HEALTH green | 🟢 OK |
+| 10/08/2026 08:55 | Módulo 06 | `curl -sk -u "elastic:$PASSWORD" "https://localhost:9200/_cat/indices/*filebeat*?v"` | Verificação de índices de logs efetuada com sucesso | 🟢 OK |
+| 10/08/2026 08:57 | Módulo 06 | `kubectl delete -f manifests/filebeat.yaml` | Filebeat removido com sucesso para liberação de memória | 🟢 OK |
+| 10/08/2026 09:15 | Módulo 06 | `cat << 'EOF' > manifests/logstash.yaml && kubectl apply -f manifests/logstash.yaml` | Logstash implantado e validado com status HEALTH green na porta 5044 | 🟢 OK |
+| 10/08/2026 09:48 | Módulo 06 | `echo "..." | base64 -d > manifests/filebeat-para-logstash.yaml && kubectl apply -f manifests/filebeat-para-logstash.yaml` | Filebeat apontado para Logstash ativado com status HEALTH green | 🟢 OK |
+| 10/08/2026 09:50 | Módulo 06 | `curl -sk -u "elastic:$PASSWORD" "https://localhost:9200/_cat/indices/logstash-lab-*?v"` | Validação do índice logstash-lab-* no Elasticsearch efetuada | 🟢 OK |
+| 10/08/2026 09:52 | Módulo 06 | `kubectl delete -f manifests/filebeat-para-logstash.yaml && kubectl delete -f manifests/logstash.yaml` | Recursos do Lab B removidos com sucesso | 🟢 OK |
+| 10/08/2026 09:55 | Módulo 06 | `echo "..." | base64 -d > manifests/elastic-agent-standalone.yaml && kubectl apply -f manifests/elastic-agent-standalone.yaml` | Elastic Agent Standalone aplicado e validado com status HEALTH green | 🟢 OK |
+| 10/08/2026 09:57 | Módulo 06 | `curl -sk -u "elastic:$PASSWORD" "https://localhost:9200/_cat/indices/*system*?v"` | Coleta de métricas do sistema confirmada no Elasticsearch | 🟢 OK |
+| 10/08/2026 09:58 | Módulo 06 | `kubectl delete -f manifests/elastic-agent-standalone.yaml` | Elastic Agent Standalone removido com sucesso | 🟢 OK |
+| 10/08/2026 10:05 | Módulo 06 | `echo "..." | base64 -d > manifests/kibana.yaml && kubectl apply -f manifests/kibana.yaml` | Kibana reconfigurado e atualizado com as opções xpack.fleet.* | 🟢 OK |
+| 10/08/2026 10:07 | Módulo 06 | `echo "..." | base64 -d > manifests/fleet-referencia.yaml && kubectl apply -f manifests/fleet-referencia.yaml` | Fleet Server e Elastic Agent gerenciado criados e validados | 🟢 OK |
 
 ---
 
@@ -66,8 +80,8 @@
 - [x] **Módulo 02:** Deploy Elastic Stack via ECK
 - [x] **Módulo 03:** Query DSL
 - [x] **Módulo 04:** Nós, Shards e Segments
-- [ ] **Módulo 05:** Index Settings, Mapping & Analyzers
-- [ ] **Módulo 06:** Ingestão de Dados & Elastic Agent
+- [x] **Módulo 05:** Index Settings, Mapping & Analyzers
+- [x] **Módulo 06:** Ingestão de Dados & Elastic Agent
 - [ ] **Módulo 07:** Kibana & Dashboards
 - [ ] **Módulo 08:** Index Lifecycle Management (ILM)
 - [ ] **Módulo 09:** Machine Learning
