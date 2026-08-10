@@ -17,15 +17,14 @@ kubectl -n elastic port-forward service/lab-kb-http 5601
 Nesta etapa, você irá verificar se os Data Views gerados automaticamente pela carga de dados de exemplo (*Sample Data*) estão disponíveis no Kibana.
 
 1. **Acessar o menu de gerenciamento:**
-   No menu lateral esquerdo do Kibana, navegue até a seção de administração:
-   **Management** → **Stack Management**.
+   No menu lateral esquerdo do Kibana, navegue até a seção de administração: **Management** → **Stack Management**.
 
-   ![Página Inicial - Kibana](07-kibana-dashboards/prints%20treinamentos/pagina-inicial.png)
+   ![Página Inicial - Kibana](prints%20treinamentos/pagina-inicial.png)
 
 2. **Abrir a gestão de Data Views:**
    Dentro da tela do *Stack Management*, localize o menu lateral esquerdo e clique em **Data Views**.
 
-   ![Data Views - Kibana](07-kibana-dashboards/prints%20treinamentos/kibana-data-views.png)
+   ![Data Views - Kibana](prints%20treinamentos/kibana-data-views.png)
 
 3. **Validar a presença dos itens:**
    Certifique-se de que os dois Data Views criados pelo conjunto de amostra estão visíveis na lista:
