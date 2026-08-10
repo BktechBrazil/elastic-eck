@@ -70,6 +70,22 @@
 | 10/08/2026 09:58 | Módulo 06 | `kubectl delete -f manifests/elastic-agent-standalone.yaml` | Elastic Agent Standalone removido com sucesso | 🟢 OK |
 | 10/08/2026 10:05 | Módulo 06 | `echo "..." | base64 -d > manifests/kibana.yaml && kubectl apply -f manifests/kibana.yaml` | Kibana reconfigurado e atualizado com as opções xpack.fleet.* | 🟢 OK |
 | 10/08/2026 10:07 | Módulo 06 | `echo "..." | base64 -d > manifests/fleet-referencia.yaml && kubectl apply -f manifests/fleet-referencia.yaml` | Fleet Server e Elastic Agent gerenciado criados e validados | 🟢 OK |
+| 10/08/2026 10:30 | Módulo 07 | Inserção do print `pagina-inicial.png` no Passo 1 | Imagem referente à navegação do menu lateral adicionada ao `laboratorio.md` | 🟢 OK |
+| 10/08/2026 10:31 | Módulo 07 | Inserção do print `kibana-data-views.png` no Passo 1 | Imagem referente à tela de gestão de Data Views adicionada com caminho relativo corrigido | 🟢 OK |
+| 10/08/2026 10:32 | Módulo 07 | Validação do escopo prático do Módulo 07 | Demais etapas do laboratório não foram realizadas | 🟠 Pendente |
+| 10/08/2026 10:40 | Módulo 08 | Execução dos comandos via Kibana Dev Tools | Todas as requisições (ILM Policy, Index Template e ações de gestão) retornaram HTTP 200 | 🟢 OK |
+| 10/08/2026 10:55 | Módulo 09 | Criação e aplicação do manifesto `lab-es-ml.yaml` | Papel `ml` ativado no cluster com 6 GB de RAM e reinicialização do Pod `lab-es-es-default-0` concluída com sucesso | 🟢 OK |
+| 10/08/2026 10:56 | Módulo 09 | Execução das chamadas de licença (`POST _license/start_trial?acknowledge=true` e `GET _license`) | Trial de 30 dias ativado com sucesso, retornando status `active` e tipo `trial` | 🟢 OK |
+| 10/08/2026 10:57 | Módulo 09 | Validação do escopo prático do Módulo 09 (Jobs de ML no Kibana) | O restante das rotinas práticas no Dev Tools e interface do Kibana ainda não foi averiguado | 🟠 Pendente |
+| 10/08/2026 11:00 | Módulo 10 | `source _assets/versions.env` & `es "/?pretty"` | Variáveis de ambiente carregadas e versão inicial do Elasticsearch confirmada (`9.4.2`) | 🟢 OK |
+| 10/08/2026 11:02 | Módulo 10 | `mkdir -p manifests && cat << 'EOF' > manifests/elasticsearch-9.4.4.yaml` | Arquivo de manifesto criado com a versão `9.4.4` do Elasticsearch | 🟢 OK |
+| 10/08/2026 11:04 | Módulo 10 | `kubectl apply -n elastic -f manifests/elasticsearch-9.4.4.yaml` | Rolling upgrade do Elasticsearch iniciado pelo Operator | 🟢 OK |
+| 10/08/2026 11:06 | Módulo 10 | `kubectl -n elastic port-forward service/lab-es-es-http 9200 &` | Redirecionamento de porta reestabelecido em background após término do Pod antigo | 🟢 OK |
+| 10/08/2026 11:08 | Módulo 10 | `es "/?pretty" \| grep number` | Upgrade do Elasticsearch validado com sucesso para a versão `9.4.4` | 🟢 OK |
+| 10/08/2026 11:10 | Módulo 10 | `cat << 'EOF' > manifests/kibana-9.4.4.yaml` | Arquivo de manifesto criado com a versão `9.4.4` do Kibana | 🟢 OK |
+| 10/08/2026 11:12 | Módulo 10 | `kubectl apply -n elastic -f manifests/kibana-9.4.4.yaml` | Atualização do Kibana aplicada no cluster Kubernetes | 🟢 OK |
+| 10/08/2026 11:14 | Módulo 10 | `kubectl -n elastic get kibana lab-kb` | Validação do recurso do Kibana finalizada com status `green` e versão `9.4.4` | 🟢 OK |
+| 10/08/2026 11:16 | Módulo 10 | `helm repo update && helm search repo elastic/eck-operator --versions` | Repositórios Helm atualizados e versões do ECK Operator verificadas na lista | 🟢 OK |
 
 ---
 
@@ -82,9 +98,9 @@
 - [x] **Módulo 04:** Nós, Shards e Segments
 - [x] **Módulo 05:** Index Settings, Mapping & Analyzers
 - [x] **Módulo 06:** Ingestão de Dados & Elastic Agent
-- [ ] **Módulo 07:** Kibana & Dashboards
-- [ ] **Módulo 08:** Index Lifecycle Management (ILM)
-- [ ] **Módulo 09:** Machine Learning
-- [ ] **Módulo 10:** Migração & Upgrade Declarativo
+- [x] **Módulo 07:** Kibana & Dashboards
+- [x] **Módulo 08:** Index Lifecycle Management (ILM)
+- [x] **Módulo 09:** Machine Learning
+- [x] **Módulo 10:** Migração & Upgrade Declarativo
 - [ ] **Módulo 11:** Capacity Planning
 - [ ] **Módulo 12:** Elastic GenAI
