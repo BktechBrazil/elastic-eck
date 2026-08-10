@@ -7,13 +7,17 @@
 
 ## Log de Execução e Validação
 
+---
+
+## Log de Execução e Validação
+
 | Timestamp | Módulo | Comando Executado | Resultado / Observação | Status |
 | :--- | :--- | :--- | :--- | :--- |
 | 07/08/2026 08:45 | - | Inicialização da auditoria | Arquivo de acompanhamento criado | 🟢 Pronto |
 | 07/08/2026 08:49 | Módulo 00 | `sudo apt-get update && sudo apt-get upgrade -y` | Sistema atualizado com sucesso (0 upgraded) | 🟢 OK |
 | 07/08/2026 09:04 | Módulo 00 | `sudo apt-get install -y curl gnupg apt-transport-https ca-certificates` | Utilitários já na versão mais recente | 🟢 OK |
 | 07/08/2026 09:04 | Módulo 00 | `sudo hostnamectl set-hostname eck-lab` | Hostname alterado para eck-lab | 🟢 OK |
-| 07/08/2026 09:04 | Módulo 00 | `sudo swapoff -a && sed -i.bak '/\bswap\b/ s/^/#/' /etc/fstab` | Swap desabilitado e fstab atualizado | 🟢 OK |
+| 07/08/2026 09:04 | Módulo 00 | `sudo swapoff -a && sed -i.bak '/ swap / s/^/#/' /etc/fstab` | Swap desabilitado e fstab atualizado | 🟢 OK |
 | 07/08/2026 09:04 | Módulo 00 | `free -h` | Validação de swap: 0B total / 0B used | 🟢 OK |
 | 07/08/2026 09:04 | Módulo 00 | `modprobe overlay && modprobe br_netfilter` | Módulos de kernel carregados e persisitidos em `/etc/modules-load.d/k8s.conf` | 🟢 OK |
 | 07/08/2026 09:04 | Módulo 00 | `lsmod | grep -E 'overlay|br_netfilter'` | Módulos confirmados em memória (`overlay`, `br_netfilter`) | 🟢 OK |
@@ -50,31 +54,32 @@
 | 07/08/2026 11:38 | Módulo 03 | Ajuste do bloco de inicialização do terminal | Substituído o comando original por bloco resiliente (`pkill -f "port-forward.*9200" || true` + `sleep 2`) para garantir liberação de porta e estabilidade do túnel antes de requisições. | 🟢 Corrigido |
 | 07/08/2026 11:40 | Módulo 03 | Validação dos Passos 1 a 9 | Os Passos 1 ao 9 não foram executados via terminal (`curl`). A validação do módulo foi realizada exclusivamente na interface do Kibana Dev Tools utilizando o lote de consultas em `exemplos/consultas-dev-tools.txt`, com todas as buscas retornando HTTP 200. | 🟢 OK |
 | 07/08/2026 14:26 | Módulo 04 | Inicialização (Pré-requisitos) | Erro `secrets not found` indicou ausência do cluster `lab-es`. Adicionada Etapa 0 no início do laboratório para garantir de forma idempotente que o cluster do Módulo 02 esteja em execução antes de capturar senhas. | 🟢 Corrigido |
-| 07/08/2026 14:32 | Módulo 04 | Passo 3 (Criar índice loja) | Erro HTTP 405 (`Incorrect HTTP method for uri [/]`) causado pela estrutura do `alias es` no `curl`[cite: 2]. Atualizado o `laboratorio.md` para utilizar chamadas `curl` explícitas[cite: 1, 2]. | 🟢 Corrigido |
-| 07/08/2026 14:40 | Módulo 04 | Passo 4 (Corrigir em single-node) | Erro HTTP 405 ao tentar alterar réplicas usando `alias es`[cite: 2]. Atualizado o `laboratorio.md` para chamada `curl` explícita[cite: 1]. | 🟢 Corrigido |
+| 07/08/2026 14:32 | Módulo 04 | Passo 3 (Criar índice loja) | Erro HTTP 405 (`Incorrect HTTP method for uri [/]`) causado pela estrutura do `alias es` no `curl`. Atualizado o `laboratorio.md` para utilizar chamadas `curl` explícitas. | 🟢 Corrigido |
+| 07/08/2026 14:40 | Módulo 04 | Passo 4 (Corrigir em single-node) | Erro HTTP 405 ao tentar alterar réplicas usando `alias es`. Atualizado o `laboratorio.md` para chamada `curl` explícita. | 🟢 Corrigido |
 | 07/08/2026 14:42 | Módulo 04 | Passo 5 (Cluster 2 nós) | Erro `path "manifests/topo-es.yaml" does not exist`. Adicionada a criação automática do manifesto via HEREDOC no `laboratorio.md`. | 🟢 Corrigido |
-| 07/08/2026 14:48 | Módulo 04 | Passo 6 (Criar índice loja2 no topo-es) | Erro HTTP 405 ao tentar criar `loja2` usando `alias es2`. Atualizado o `laboratorio.md` para chamada `curl` explícita na porta 9201[cite: 1]. | 🟢 Corrigido |
-| 07/08/2026 14:55 | Módulo 04 | Passo 9 (Forcemerge de segmentos no loja2) | Erro HTTP 405 ao executar `_forcemerge` usando `alias es2`[cite: 1]. Atualizado o `laboratorio.md` para chamada `curl` explícita na porta 9201[cite: 1]. | 🟢 Corrigido |
-| 07/08/2026 15:00 | Módulo 04 | Voltar ao ambiente base (Limpeza) | Erro `path "../02-deploy-elastic-stack-eck/manifests/elasticsearch.yaml" does not exist`[cite: 1]. Atualizado o roteiro do laboratório para o caminho local `manifests/elasticsearch.yaml`[cite: 1]. | 🟢 Corrigido |
+| 07/08/2026 14:48 | Módulo 04 | Passo 6 (Criar índice loja2 no topo-es) | Erro HTTP 405 ao tentar criar `loja2` usando `alias es2`. Atualizado o `laboratorio.md` para chamada `curl` explícita na porta 9201. | 🟢 Corrigido |
+| 07/08/2026 14:55 | Módulo 04 | Passo 9 (Forcemerge de segmentos no loja2) | Erro HTTP 405 ao executar `_forcemerge` usando `alias es2`. Atualizado o `laboratorio.md` para chamada `curl` explícita na porta 9201. | 🟢 Corrigido |
+| 07/08/2026 15:00 | Módulo 04 | Voltar ao ambiente base (Limpeza) | Erro `path "../02-deploy-elastic-stack-eck/manifests/elasticsearch.yaml" does not exist`. Atualizado o roteiro do laboratório para o caminho local `manifests/elasticsearch.yaml`. | 🟢 Corrigido |
 | 10/08/2026 08:45 | Módulo 05 | Passos 1 a 10 (Mapping, Analyzers, Aliases e Reindex) | Todos os códigos foram testados no Kibana Dev Tools e retornaram código 200 | 🟢 OK |
 | 10/08/2026 08:49 | Módulo 06 | `kubectl get crd | grep -E 'beats|agents|logstashes'` | CRDs de ingestão confirmados e ativos no cluster | 🟢 OK |
 | 10/08/2026 08:52 | Módulo 06 | `cat << 'EOF' > manifests/filebeat.yaml && kubectl apply -f manifests/filebeat.yaml` | Criado o manifesto filebeat.yaml e validado com status HEALTH green | 🟢 OK |
 | 10/08/2026 08:55 | Módulo 06 | `curl -sk -u "elastic:$PASSWORD" "https://localhost:9200/_cat/indices/*filebeat*?v"` | Verificação de índices de logs efetuada com sucesso | 🟢 OK |
 | 10/08/2026 08:57 | Módulo 06 | `kubectl delete -f manifests/filebeat.yaml` | Filebeat removido com sucesso para liberação de memória | 🟢 OK |
 | 10/08/2026 09:15 | Módulo 06 | `cat << 'EOF' > manifests/logstash.yaml && kubectl apply -f manifests/logstash.yaml` | Logstash implantado e validado com status HEALTH green na porta 5044 | 🟢 OK |
-| 10/08/2026 09:48 | Módulo 06 | `echo "..." | base64 -d > manifests/filebeat-para-logstash.yaml && kubectl apply -f manifests/filebeat-para-logstash.yaml` | Filebeat apontado para Logstash ativado com status HEALTH green | 🟢 OK |
+| 10/08/2026 09:40 | Módulo 06 | `kubectl apply -f manifests/filebeat-para-logstash.yaml` | Erro `CrashLoopBackOff` no pod do Filebeat. Logs indicaram falha: `Container input is deprecated. Use Filestream input`. | 🔴 Erro |
+| 10/08/2026 09:48 | Módulo 06 | `echo "..." \| base64 -d > manifests/filebeat-para-logstash.yaml && kubectl apply -f manifests/filebeat-para-logstash.yaml` | Manifesto recriado utilizando parser `filestream` via base64. Filebeat apontado para Logstash ativado com status HEALTH green. | 🟢 Corrigido |
 | 10/08/2026 09:50 | Módulo 06 | `curl -sk -u "elastic:$PASSWORD" "https://localhost:9200/_cat/indices/logstash-lab-*?v"` | Validação do índice logstash-lab-* no Elasticsearch efetuada | 🟢 OK |
 | 10/08/2026 09:52 | Módulo 06 | `kubectl delete -f manifests/filebeat-para-logstash.yaml && kubectl delete -f manifests/logstash.yaml` | Recursos do Lab B removidos com sucesso | 🟢 OK |
-| 10/08/2026 09:55 | Módulo 06 | `echo "..." | base64 -d > manifests/elastic-agent-standalone.yaml && kubectl apply -f manifests/elastic-agent-standalone.yaml` | Elastic Agent Standalone aplicado e validado com status HEALTH green | 🟢 OK |
+| 10/08/2026 09:55 | Módulo 06 | `echo "..." \| base64 -d > manifests/elastic-agent-standalone.yaml && kubectl apply -f manifests/elastic-agent-standalone.yaml` | Elastic Agent Standalone aplicado e validado com status HEALTH green | 🟢 OK |
 | 10/08/2026 09:57 | Módulo 06 | `curl -sk -u "elastic:$PASSWORD" "https://localhost:9200/_cat/indices/*system*?v"` | Coleta de métricas do sistema confirmada no Elasticsearch | 🟢 OK |
 | 10/08/2026 09:58 | Módulo 06 | `kubectl delete -f manifests/elastic-agent-standalone.yaml` | Elastic Agent Standalone removido com sucesso | 🟢 OK |
-| 10/08/2026 10:05 | Módulo 06 | `echo "..." | base64 -d > manifests/kibana.yaml && kubectl apply -f manifests/kibana.yaml` | Kibana reconfigurado e atualizado com as opções xpack.fleet.* | 🟢 OK |
-| 10/08/2026 10:07 | Módulo 06 | `echo "..." | base64 -d > manifests/fleet-referencia.yaml && kubectl apply -f manifests/fleet-referencia.yaml` | Fleet Server e Elastic Agent gerenciado criados e validados | 🟢 OK |
+| 10/08/2026 10:05 | Módulo 06 | `echo "..." \| base64 -d > manifests/kibana.yaml && kubectl apply -f manifests/kibana.yaml` | Kibana reconfigurado e atualizado com as opções xpack.fleet.* | 🟢 OK |
+| 10/08/2026 10:07 | Módulo 06 | `echo "..." \| base64 -d > manifests/fleet-referencia.yaml && kubectl apply -f manifests/fleet-referencia.yaml` | Fleet Server e Elastic Agent gerenciado criados e validados | 🟢 OK |
 | 10/08/2026 10:30 | Módulo 07 | Inserção do print `pagina-inicial.png` no Passo 1 | Imagem referente à navegação do menu lateral adicionada ao `laboratorio.md` | 🟢 OK |
 | 10/08/2026 10:31 | Módulo 07 | Inserção do print `kibana-data-views.png` no Passo 1 | Imagem referente à tela de gestão de Data Views adicionada com caminho relativo corrigido | 🟢 OK |
 | 10/08/2026 10:32 | Módulo 07 | Validação do escopo prático do Módulo 07 | Demais etapas do laboratório não foram realizadas | 🟠 Pendente |
 | 10/08/2026 10:40 | Módulo 08 | Execução dos comandos via Kibana Dev Tools | Todas as requisições (ILM Policy, Index Template e ações de gestão) retornaram HTTP 200 | 🟢 OK |
-| 10/08/2026 10:55 | Módulo 09 | Criação e aplicação do manifesto `lab-es-ml.yaml` | Papel `ml` ativado no cluster com 6 GB de RAM e reinicialização do Pod `lab-es-es-default-0` concluída com sucesso | 🟢 OK |
+| 10/08/2026 10:55 | Módulo 09 | `kubectl apply -n elastic -f manifests/lab-es-ml.yaml` | Erro ao aplicar o patch: `strict decoding error: unknown field "spec.nodeSets[0].volumeClaimTemplates[0].spec.requests"`. O manifesto foi rejeitado pelo K8s e o Pod não foi reiniciado (manteve idade original de 2d19h). Necessita ajuste na estrutura do YAML. | 🔴 Erro |
 | 10/08/2026 10:56 | Módulo 09 | Execução das chamadas de licença (`POST _license/start_trial?acknowledge=true` e `GET _license`) | Trial de 30 dias ativado com sucesso, retornando status `active` e tipo `trial` | 🟢 OK |
 | 10/08/2026 10:57 | Módulo 09 | Validação do escopo prático do Módulo 09 (Jobs de ML no Kibana) | O restante das rotinas práticas no Dev Tools e interface do Kibana ainda não foi averiguado | 🟠 Pendente |
 | 10/08/2026 11:00 | Módulo 10 | `source _assets/versions.env` & `es "/?pretty"` | Variáveis de ambiente carregadas e versão inicial do Elasticsearch confirmada (`9.4.2`) | 🟢 OK |
