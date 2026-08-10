@@ -14,7 +14,25 @@ kubectl -n elastic port-forward service/lab-kb-http 5601
 
 ### Passo 1 — Confirmar os Data Views
 
-Vá em **Stack Management → Data Views**. Os Sample data já criam `kibana_sample_data_ecommerce` e `kibana_sample_data_logs`. Se precisar criar um, aponte para o padrão de índice e escolha o campo de tempo (`order_date` / `@timestamp`).
+Nesta etapa, você irá verificar se os Data Views gerados automaticamente pela carga de dados de exemplo (*Sample Data*) estão disponíveis no Kibana[cite: 3].
+
+1. **Acessar o menu de gerenciamento:**
+   No menu lateral esquerdo do Kibana, navegue até a seção de administração:
+   **Management** → **Stack Management**[cite: 3].
+
+   ![Página Inicial - Kibana](07-kibana-dashboards/prints%20treinamentos/pagina-inicial.png)
+
+2. **Abrir a gestão de Data Views:**
+   Dentro da tela do *Stack Management*, localize o menu lateral esquerdo e clique em **Data Views**[cite: 3].
+
+   ![Data Views - Kibana](07-kibana-dashboards/prints%20treinamentos/kibana-data-views.png)
+
+3. **Validar a presença dos itens:**
+   Certifique-se de que os dois Data Views criados pelo conjunto de amostra estão visíveis na lista:
+   * `kibana_sample_data_ecommerce` (Dados de vendas do e-commerce)[cite: 3]
+   * `kibana_sample_data_logs` (Logs de tráfego do servidor web)[cite: 3]
+
+> 💡 **Dica (Criação Manual):** Se no futuro precisar conectar um novo índice sem conjunto de dados pré-definido, clique em **Create data view**, insira o padrão do índice (ex: `filebeat-*`) e selecione o campo temporal correto (`order_date` para vendas ou `@timestamp` para eventos/logs)[cite: 3].
 
 ### Passo 2 — Explorar os web logs
 
