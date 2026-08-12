@@ -3,9 +3,14 @@
 > **Pré-requisito:** Módulo 01 concluído (operator + quickstart).
 > **Tempo estimado:** 25–35 minutos.
 
+Comandos com `$` rodam na **VM**. As versões vêm de `_assets/versions.env`:
+
 ```bash
 source ../_assets/versions.env
+echo "ECK=$ECK_VERSION  STACK=$STACK_VERSION  K8S=$K8S_VERSION"
 ```
+
+> **Nota:** Caso esteja executando os comandos sem ter o repositório clonado na VM, certifique-se de ter executado `source _assets/versions.env` a partir da raiz `/root`.
 
 ---
 
@@ -32,7 +37,7 @@ Apague o pod e veja o operator/StatefulSet recriá-lo:
 
 ```bash
 kubectl -n elastic delete pod quickstart-es-default-0
-kubectl -n elastic get pods -w      # o pod volta sozinho; Ctrl+C
+kubectl -n elastic get pods -w      # o pod volta sozinho; Ctrl+C quando estiver Running novamente
 ```
 
 ---
@@ -43,10 +48,72 @@ O quickstart é mínimo. Agora subimos um cluster nomeado com escolhas explícit
 
 ### Passo 4 — Aplicar o cluster do laboratório
 
+> **Nota:** Caso não tenha clonado o repositório na VM, crie os arquivos de manifesto `elasticsearch.yaml` e `kibana.yaml` executando os comandos abaixo (à prova de falhas de cola SSH):
+
+```bash
+mkdir -p manifests
+
+echo 'apiVersion: elasticsearch.k8s.elastic.co/v1' > manifests/elasticsearch.yaml
+echo 'kind: Elasticsearch' >> manifests/elasticsearch.yaml
+echo 'metadata:' >> manifests/elasticsearch.yaml
+echo '  name: lab-es' >> manifests/elasticsearch.yaml
+echo 'spec:' >> manifests/elasticsearch.yaml
+echo '  version: 9.4.2' >> manifests/elasticsearch.yaml
+echo '  nodeSets:' >> manifests/elasticsearch.yaml
+echo '    - name: default' >> manifests/elasticsearch.yaml
+echo '      count: 1' >> manifests/elasticsearch.yaml
+echo '      config:' >> manifests/elasticsearch.yaml
+echo '        node.store.allow_mmap: true' >> manifests/elasticsearch.yaml
+echo '      podTemplate:' >> manifests/elasticsearch.yaml
+echo '        spec:' >> manifests/elasticsearch.yaml
+echo '          containers:' >> manifests/elasticsearch.yaml
+echo '            - name: elasticsearch' >> manifests/elasticsearch.yaml
+echo '              env:' >> manifests/elasticsearch.yaml
+echo '                - name: ES_JAVA_OPTS' >> manifests/elasticsearch.yaml
+echo '                  value: -Xms2g -Xmx2g' >> manifests/elasticsearch.yaml
+echo '              resources:' >> manifests/elasticsearch.yaml
+echo '                requests:' >> manifests/elasticsearch.yaml
+echo '                  memory: 4Gi' >> manifests/elasticsearch.yaml
+echo '                  cpu: "1"' >> manifests/elasticsearch.yaml
+echo '                limits:' >> manifests/elasticsearch.yaml
+echo '                  memory: 4Gi' >> manifests/elasticsearch.yaml
+echo '      volumeClaimTemplates:' >> manifests/elasticsearch.yaml
+echo '        - metadata:' >> manifests/elasticsearch.yaml
+echo '            name: elasticsearch-data' >> manifests/elasticsearch.yaml
+echo '          spec:' >> manifests/elasticsearch.yaml
+echo '            accessModes: [ReadWriteOnce]' >> manifests/elasticsearch.yaml
+echo '            resources:' >> manifests/elasticsearch.yaml
+echo '              requests:' >> manifests/elasticsearch.yaml
+echo '                storage: 20Gi' >> manifests/elasticsearch.yaml
+echo '            storageClassName: local-path' >> manifests/elasticsearch.yaml
+
+echo 'apiVersion: kibana.k8s.elastic.co/v1' > manifests/kibana.yaml
+echo 'kind: Kibana' >> manifests/kibana.yaml
+echo 'metadata:' >> manifests/kibana.yaml
+echo '  name: lab-kb' >> manifests/kibana.yaml
+echo 'spec:' >> manifests/kibana.yaml
+echo '  version: 9.4.2' >> manifests/kibana.yaml
+echo '  count: 1' >> manifests/kibana.yaml
+echo '  elasticsearchRef:' >> manifests/kibana.yaml
+echo '    name: lab-es' >> manifests/kibana.yaml
+echo '  podTemplate:' >> manifests/kibana.yaml
+echo '    spec:' >> manifests/kibana.yaml
+echo '      containers:' >> manifests/kibana.yaml
+echo '        - name: kibana' >> manifests/kibana.yaml
+echo '          resources:' >> manifests/kibana.yaml
+echo '            requests:' >> manifests/kibana.yaml
+echo '              memory: 1Gi' >> manifests/kibana.yaml
+echo '              cpu: 500m' >> manifests/kibana.yaml
+echo '            limits:' >> manifests/kibana.yaml
+echo '              memory: 2Gi' >> manifests/kibana.yaml
+```
+
+Aplique os manifestos do cluster do laboratório:
+
 ```bash
 kubectl apply -n elastic -f manifests/elasticsearch.yaml
 kubectl apply -n elastic -f manifests/kibana.yaml
-kubectl -n elastic get elasticsearch,kibana -w    # aguarde HEALTH green
+kubectl -n elastic get pods -w    # aguarde até os pods lab-es e lab-kb ficarem Running
 ```
 
 ### Passo 5 — Senha e acesso do `lab-es`
@@ -56,17 +123,39 @@ PASSWORD=$(kubectl -n elastic get secret lab-es-es-elastic-user \
   -o go-template='{{.data.elastic | base64decode}}')
 echo "Senha: $PASSWORD"
 
+# Encerra túneis anteriores para liberar as portas 9200/5601
+pkill -f "port-forward" || true
+
 kubectl -n elastic port-forward service/lab-es-es-http 9200 &
+sleep 2
 curl -k -u "elastic:$PASSWORD" https://localhost:9200/_cluster/health?pretty
 # status deve ser "green" (0 réplicas em single-node)
 ```
 
 ### Passo 6 — Validar TLS com a CA (sem `-k`)
 
+Extraia o certificado do servidor (que contém os SANs) e a CA pública:
+
 ```bash
-kubectl -n elastic get secret lab-es-es-http-certs-public \
-  -o go-template='{{index .data "ca.crt" | base64decode}}' > ca.crt
-curl --cacert ca.crt -u "elastic:$PASSWORD" https://localhost:9200
+kubectl -n elastic get secret lab-es-es-http-certs-public -o go-template='{{index .data "ca.crt" | base64decode}}' > ca.crt
+kubectl -n elastic get secret lab-es-es-http-certs-public -o go-template='{{index .data "tls.crt" | base64decode}}' > tls.crt
+```
+
+Veja os SANs do certificado do servidor:
+
+```bash
+openssl x509 -in tls.crt -noout -text | grep -A5 "Subject Alternative"
+```
+
+> **ℹ️ Limitação do `port-forward` com CA:**
+> O certificado TLS é assinado para os hostnames internos do Kubernetes (ex: `lab-es-es-http.elastic.svc`), **não para `localhost`**. Por isso o `curl --cacert` falha com `SSL: no alternative certificate subject name matches target host name 'localhost'` — isso é **comportamento correto do TLS**.
+>
+> Em produção o acesso seria pelo hostname interno e o TLS funcionaria perfeitamente. Para fins de laboratório, use a flag `-k` (Passo 5) ou o `--resolve` abaixo.
+
+Use `--resolve` para mapear o hostname do certificado para `127.0.0.1` (em **uma linha só**, sem `\`):
+
+```bash
+curl --cacert ca.crt --resolve "lab-es-es-http.elastic.svc:9200:127.0.0.1" -u "elastic:$PASSWORD" https://lab-es-es-http.elastic.svc:9200
 ```
 
 ---
@@ -75,9 +164,12 @@ curl --cacert ca.crt -u "elastic:$PASSWORD" https://localhost:9200
 
 ### Passo 7 — Abrir o Kibana
 
+Para VMs remotas de cloud (Contabo), exponha o serviço com `--address 0.0.0.0`:
+
 ```bash
-kubectl -n elastic port-forward service/lab-kb-http 5601
-# navegador: https://localhost:5601  (elastic / $PASSWORD)
+pkill -f "port-forward.*5601" || true
+kubectl -n elastic port-forward --address 0.0.0.0 service/lab-kb-http 5601 &
+# navegador: https://<IP_DA_VM>:5601  (usuário: elastic / senha: $PASSWORD)
 ```
 
 ### Passo 8 — Carregar os "Sample data"

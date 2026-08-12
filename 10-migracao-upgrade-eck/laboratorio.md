@@ -4,7 +4,7 @@
 > **Tempo estimado:** 25–35 minutos.
 
 ```bash
-source ../_assets/versions.env
+source _assets/versions.env
 PASSWORD=$(kubectl -n elastic get secret lab-es-es-elastic-user -o go-template='{{.data.elastic | base64decode}}')
 kubectl -n elastic port-forward service/lab-es-es-http 9200 &
 alias es="curl -sk -u elastic:$PASSWORD https://localhost:9200"
@@ -40,7 +40,43 @@ PUT _snapshot/lab_backup/antes-upgrade?wait_for_completion=true
 
 ## Parte B — Atualizar o Elasticsearch
 
-### Passo 3 — Mudar a versão no CRD
+### passo 3 - Criar o arquivo elasticsearch-9.4.4.yaml (caso não exista)
+```bash
+mkdir -p manifests
+cat << 'EOF' > manifests/elasticsearch-9.4.4.yaml
+# lab-es atualizado para 9.4.4 (Módulo 10). Idêntico ao do Módulo 02,
+# apenas com spec.version alterado. Aplique e o operator faz o rolling upgrade.
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: lab-es
+spec:
+  version: 9.4.4          # <-- era 9.4.2
+  nodeSets:
+    - name: default
+      count: 1
+      config:
+        node.store.allow_mmap: true
+      podTemplate:
+        spec:
+          containers:
+            - name: elasticsearch
+              env:
+                - name: ES_JAVA_OPTS
+                  value: -Xms2g -Xmx2g
+              resources:
+                requests: { memory: 4Gi, cpu: "1" }
+                limits:   { memory: 4Gi }
+      volumeClaimTemplates:
+        - metadata: { name: elasticsearch-data }
+          spec:
+            accessModes: [ReadWriteOnce]
+            resources: { requests: { storage: 20Gi } }
+            storageClassName: local-path
+EOF
+```
+
+### Passo 3.1 — Mudar a versão no CRD
 
 O upgrade é só trocar `spec.version`. Aplique o manifesto já preparado (9.4.4):
 

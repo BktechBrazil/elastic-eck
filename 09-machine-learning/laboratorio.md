@@ -5,7 +5,7 @@
 > **⚠️ Recursos:** módulo pesado. Pare coletores do Módulo 06 e outros clusters. Ideal subir a VM para 32 GB.
 
 ```bash
-source ../_assets/versions.env
+source _assets/versions.env
 PASSWORD=$(kubectl -n elastic get secret lab-es-es-elastic-user -o go-template='{{.data.elastic | base64decode}}')
 ```
 
@@ -15,11 +15,61 @@ PASSWORD=$(kubectl -n elastic get secret lab-es-es-elastic-user -o go-template='
 
 ### Passo 1 — Ativar o papel `ml` no cluster
 
-Aplique o cluster com o papel `ml` e mais memória (isto **substitui** o `lab-es` do Módulo 02 por uma versão com ML):
+Aplique a nova configuração no cluster para habilitar o papel de Machine Learning (`ml`) e expandir os recursos de memória.
+
+1. **Criar o arquivo do manifesto `lab-es-ml.yaml`:**
+
+```bash
+mkdir -p manifests
+cat << 'EOF' > manifests/lab-es-ml.yaml
+# Cluster do lab com o papel de nó "ml" habilitado (Módulo 09).
+# Heap e memória maiores porque ML consome RAM ALÉM do heap da JVM.
+# ATENÇÃO (16 GB): rode isolado; pare coletores/outros clusters antes.
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: lab-es
+spec:
+  version: 9.4.2
+  nodeSets:
+    - name: default
+      count: 1
+      config:
+        # 'ml' habilita jobs de Machine Learning neste nó.
+        node.roles: ["master", "data", "ingest", "ml", "remote_cluster_client"]
+        node.store.allow_mmap: true
+      podTemplate:
+        spec:
+          containers:
+            - name: elasticsearch
+              env:
+                - name: ES_JAVA_OPTS
+                  value: -Xms3g -Xmx3g          # heap 3 GB
+              resources:
+                requests:
+                  memory: 6Gi                    # 6 GB: heap (3G) + ML + overhead
+                  cpu: "2"
+                limits:
+                  memory: 6Gi
+      volumeClaimTemplates:
+        - metadata: { name: elasticsearch-data }
+          spec:
+            accessModes: [ReadWriteOnce]
+            resources: { requests: { storage: 20Gi } }
+            storageClassName: local-path
+EOF
+
+2. **Aplicar o manifesto e monitorar a reconciliação do cluster:**
 
 ```bash
 kubectl apply -n elastic -f manifests/lab-es-ml.yaml
-kubectl -n elastic get elasticsearch lab-es -w      # aguarde green; Ctrl+C
+kubectl -n elastic get elasticsearch lab-es -w
+```
+
+3. **(Opcional) Acompanhar a reinicialização do Pod do Elasticsearch:**
+
+```bash
+kubectl -n elastic get pods -l elasticsearch.k8s.elastic.co/cluster-name=lab-es -w
 ```
 
 ### Passo 2 — Iniciar o trial de 30 dias

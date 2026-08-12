@@ -3,10 +3,20 @@
 > **Pré-requisito:** Módulo 02 (`lab-es`).
 > **Tempo estimado:** 30–40 minutos.
 
+
+**Etapa 0 — Garantir que o cluster base está ativo (Pré-requisito)**
 ```bash
-source ../_assets/versions.env
+kubectl apply -n elastic -f manifests/elasticsearch.yaml
+kubectl -n elastic get elasticsearch lab-es -w
+# (Aguarde até a coluna HEALTH ficar green, então pressione Ctrl+C)
+```
+
+```bash
+source _assets/versions.env
 PASSWORD=$(kubectl -n elastic get secret lab-es-es-elastic-user -o go-template='{{.data.elastic | base64decode}}')
+pkill -f "port-forward.*9200" || true
 kubectl -n elastic port-forward service/lab-es-es-http 9200 &
+sleep 2
 alias es="curl -sk -u elastic:$PASSWORD https://localhost:9200"
 ```
 
@@ -37,9 +47,10 @@ Coluna `prirep`: `p` = primary, `r` = replica. Coluna `state`: `STARTED` ou `UNA
 ### Passo 3 — Criar um índice com 3 primários e 1 réplica
 
 ```bash
-es -X PUT "/loja?pretty" -H 'Content-Type: application/json' -d '{
+curl -sk -u "elastic:$PASSWORD" -X PUT "https://localhost:9200/loja?pretty" -H 'Content-Type: application/json' -d '{
   "settings": { "number_of_shards": 3, "number_of_replicas": 1 }
 }'
+curl -sk -u "elastic:$PASSWORD" "https://localhost:9200/_cat/shards/loja?v"
 es "/_cat/shards/loja?v"
 ```
 
@@ -52,7 +63,8 @@ es "/_cluster/health/loja?pretty"
 ### Passo 4 — Corrigir em single-node (réplicas = 0)
 
 ```bash
-es -X PUT "/loja/_settings" -H 'Content-Type: application/json' -d '{ "index": { "number_of_replicas": 0 } }'
+curl -sk -u "elastic:$PASSWORD" -X PUT "https://localhost:9200/loja/_settings?pretty" -H 'Content-Type: application/json' -d '{ "index": { "number_of_replicas": 0 } }'
+curl -sk -u "elastic:$PASSWORD" "https://localhost:9200/_cluster/health/loja?pretty"
 es "/_cluster/health/loja?pretty"      # agora "green"
 ```
 
@@ -65,6 +77,49 @@ es "/_cluster/health/loja?pretty"      # agora "green"
 ```bash
 # Pare o lab-es para liberar RAM, depois suba o topo-es (2 nós):
 kubectl -n elastic delete elasticsearch lab-es
+```
+#### Crie o topo-es-yaml, senão tiver em sua máquina
+
+```bash
+mkdir -p manifests
+cat << 'EOF' > manifests/topo-es.yaml
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: topo-es
+spec:
+  version: 9.4.2
+  nodeSets:
+    - name: default
+      count: 2
+      config:
+        node.store.allow_mmap: true
+      podTemplate:
+        spec:
+          containers:
+            - name: elasticsearch
+              env:
+                - name: ES_JAVA_OPTS
+                  value: -Xms1g -Xmx1g
+              resources:
+                requests:
+                  memory: 2Gi
+                  cpu: "500m"
+                limits:
+                  memory: 2Gi
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            accessModes: [ReadWriteOnce]
+            resources:
+              requests:
+                storage: 10Gi
+            storageClassName: local-path
+EOF
+```
+
+```bash
 kubectl apply -n elastic -f manifests/topo-es.yaml
 kubectl -n elastic get elasticsearch topo-es -w      # aguarde green; Ctrl+C
 ```
@@ -76,9 +131,10 @@ PASSWORD=$(kubectl -n elastic get secret topo-es-es-elastic-user -o go-template=
 kubectl -n elastic port-forward service/topo-es-es-http 9201:9200 &
 alias es2="curl -sk -u elastic:$PASSWORD https://localhost:9201"
 
-es2 -X PUT "/loja2?pretty" -H 'Content-Type: application/json' -d '{
+curl -sk -u "elastic:$PASSWORD" -X PUT "https://localhost:9201/loja2?pretty" -H 'Content-Type: application/json' -d '{
   "settings": { "number_of_shards": 2, "number_of_replicas": 1 }
 }'
+curl -sk -u "elastic:$PASSWORD" "https://localhost:9201/_cat/shards/loja2?v"
 es2 "/_cat/shards/loja2?v"
 ```
 
@@ -105,7 +161,7 @@ Cada `refresh` tende a criar um novo segment. Muitos segments pequenos = busca m
 ### Passo 8 — Force merge (otimização)
 
 ```bash
-es2 -X POST "/loja2/_forcemerge?max_num_segments=1&pretty"
+curl -sk -u "elastic:$PASSWORD" -X POST "https://localhost:9201/loja2/_forcemerge?max_num_segments=1&pretty"
 es2 "/_cat/segments/loja2?v&h=shard,prirep,segment,docs.count,docs.deleted"
 ```
 
@@ -122,6 +178,10 @@ es2 "/_cat/segments/loja2?v&h=shard,prirep,segment,docs.count,docs.deleted"
 - A tradução **nó = pod**, **grupo de nós = `nodeSet`**, **escala = `count`** no ECK.
 - A usar `_cat/nodes|shards|segments` e o **force merge**.
 
-> **Voltar ao ambiente base:** `kubectl -n elastic delete elasticsearch topo-es && kubectl apply -n elastic -f ../02-deploy-elastic-stack-eck/manifests/elasticsearch.yaml`
+> **Voltar ao ambiente base:** 
+```bash
+kubectl -n elastic delete elasticsearch topo-es --ignore-not-found=true 
+kubectl apply -n elastic -f manifests/elasticsearch.yaml
+```
 
 ➡️ **Módulo 05** — como o Elastic interpreta cada campo: **mapping, analyzers e aliases**.

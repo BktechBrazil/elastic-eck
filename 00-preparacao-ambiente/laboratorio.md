@@ -11,7 +11,7 @@ Todos os comandos rodam na **VM (host)**, com o prompt `$`. Você pode executar 
 
 ```bash
 sudo apt-get update && sudo apt-get upgrade -y
-sudo apt-get install -y curl gnupg apt-transport-https ca-certificates
+sudo apt-get install -y curl gnupg apt-transport-https ca-certificates conntrack socat
 ```
 
 ## Passo 2 — Definir o hostname (opcional, mas recomendado)
