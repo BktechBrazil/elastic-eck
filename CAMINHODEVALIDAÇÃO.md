@@ -91,6 +91,23 @@
 | 10/08/2026 11:12 | Módulo 10 | `kubectl apply -n elastic -f manifests/kibana-9.4.4.yaml` | Atualização do Kibana aplicada no cluster Kubernetes | 🟢 OK |
 | 10/08/2026 11:14 | Módulo 10 | `kubectl -n elastic get kibana lab-kb` | Validação do recurso do Kibana finalizada com status `green` e versão `9.4.4` | 🟢 OK |
 | 10/08/2026 11:16 | Módulo 10 | `helm repo update && helm search repo elastic/eck-operator --versions` | Repositórios Helm atualizados e versões do ECK Operator verificadas na lista | 🟢 OK |
+| 10/08/2026 10:30 | Módulo 07 | Inserção do print `pagina-inicial.png` no Passo 1 | Imagem referente à navegação do menu lateral adicionada ao `laboratorio.md` | 🟢 OK |
+| 10/08/2026 10:31 | Módulo 07 | Inserção do print `kibana-data-views.png` no Passo 1 | Imagem referente à tela de gestão de Data Views adicionada com caminho relativo corrigido | 🟢 OK |
+| 13/08/2026 14:30 | Módulo 07 | Consulta KQL no Kibana Discover | Ajustada consulta KQL de `response.keyword : "404" and url : *login*` para `response : 404 AND request : *kibana*`. A sintaxe original gerava erro de campo inexistente no dataset `kibana_sample_data_logs` (campos corretos: `response` e `request`). | 🟢 Corrigido |
+| 13/08/2026 15:35 | Módulo 11 | `source _assets/versions.env` + `PASSWORD=$(...)` | Bloco de inicialização ajustado para carregar o arquivo no caminho local `_assets/versions.env` sem depender do caminho relativo `../`. | 🟢 Corrigido |
+| 13/08/2026 15:36 | Módulo 11 | `kubectl top nodes` + `kubectl top pods -n elastic` | Mapeamento de recursos efetuado. Nó `eck-lab` operando com 41% de RAM (9974Mi) e pod `lab-es-es-default-0` consumindo 3350Mi. | 🟢 OK |
+| 13/08/2026 15:38 | Módulo 11 | `kubectl apply -n elastic -f manifests/lab-es-sized.yaml` | Erro `path does not exist`. Corrigido criando a pasta `manifests/` e o arquivo `lab-es-sized.yaml` via HEREDOC. | 🟢 Corrigido |
+| 13/08/2026 15:40 | Módulo 11 | `kubectl apply -n elastic -f manifests/lab-es-sized.yaml` | Dimensionamento vertical aplicado com sucesso (6GiB de RAM garantida, Heap de 3GiB e versão `9.4.4` mantida). | 🟢 OK |
+| 13/08/2026 15:45 | Módulo 11 | `nano manifests/lab-es-sized.yaml` + `kubectl apply` | Edição do manifesto para teste de alteração de escala do cluster `lab-es`. | 🟢 OK |
+| 13/08/2026 15:50 | Módulo 12 | `source _assets/versions.env` + `PASSWORD=$(...)` | Carregamento das variáveis e extração da senha do usuário `elastic`. | 🟢 OK |
+| 13/08/2026 15:52 | Módulo 12 | `cat << 'EOF' > manifests/ollama.yaml && kubectl apply -f manifests/ollama.yaml` | Manifesto do Ollama (PVC 15Gi, Deployment 3Gi/5Gi RAM e Service ClusterIP) criado e aplicado no cluster. | 🟢 OK |
+| 13/08/2026 15:55 | Módulo 12 | `kubectl -n elastic rollout status deploy/ollama` | Rollout do Deployment do Ollama concluído com sucesso. | 🟢 OK |
+| 13/08/2026 15:58 | Módulo 12 | `kubectl -n elastic exec deploy/ollama -- ollama pull llama3.2:1b` | Download do modelo LLM local `llama3.2:1b` (1.3 GB) efetuado com sucesso dentro do pod. | 🟢 OK |
+| 13/08/2026 16:02 | Módulo 12 | `kubectl -n elastic exec deploy/ollama -- curl -s http://localhost:11434/v1/models` | Erro `exec: "curl": executable file not found in $PATH` devido à ausência do utilitário `curl` na imagem oficial do Ollama. | 🔴 Erro |
+| 13/08/2026 16:05 | Módulo 12 | `kubectl -n elastic exec deploy/ollama -- ollama list` | Validação alternativa via CLI nativa do Ollama confirmando o modelo `llama3.2:1b` (1.3 GB) ativo. | 🟢 Corrigido |
+| 13/08/2026 16:10 | Módulo 12 | `kubectl -n elastic port-forward service/ollama 11434:11434 &` + `curl -s http://localhost:11434/v1/models` | Túnel aberto na porta 11434 e chamada à API OpenAI-compatible executada do host VM com retorno `{"object":"list","data":[{"id":"llama3.2:1b"}]}`. | 🟢 OK |
+| 13/08/2026 16:15 | Módulo 12 | `kubectl -n elastic port-forward --address 0.0.0.0 service/lab-kb-kb-http 5601:5601` | Redirecionamento de porta do Kibana estabelecido para testes de GenAI, Playground e RAG na interface. | 🟢 OK |
+| 13/08/2026 16:20 | Módulo 12 | `kubectl -n elastic delete -f manifests/ollama.yaml` | Limpeza de recursos do Módulo 12 executada com sucesso (PVC, Deployment e Service removidos para liberar memória RAM). | 🟢 OK |
 
 ---
 
@@ -107,5 +124,5 @@
 - [x] **Módulo 08:** Index Lifecycle Management (ILM)
 - [x] **Módulo 09:** Machine Learning
 - [x] **Módulo 10:** Migração & Upgrade Declarativo
-- [ ] **Módulo 11:** Capacity Planning
-- [ ] **Módulo 12:** Elastic GenAI
+- [x] **Módulo 11:** Capacity Planning
+- [x] **Módulo 12:** Elastic GenAI
