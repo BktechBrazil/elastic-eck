@@ -1,0 +1,44 @@
+# REFERÊNCIA — Autoscaling do Elasticsearch no ECK (recurso Enterprise; use trial).
+# Requer um cluster com nodeSets por data tier (data_hot, data_warm) e o papel ml.
+# O operator ajusta recursos/contagem dentro dos limites min/max, observando os deciders.
+#
+# 1) O cluster precisa declarar a associação nodeSet -> role e permitir autoscaling.
+# 2) O ElasticsearchAutoscaler define as políticas.
+---
+apiVersion: autoscaling.k8s.elastic.co/v1alpha1
+kind: ElasticsearchAutoscaler
+metadata:
+  name: lab-autoscaler
+  namespace: elastic
+spec:
+  elasticsearchRef:
+    name: lab-es
+  policies:
+    - name: data-hot
+      roles: ["data_hot", "data_content", "ingest"]
+      resources:
+        nodeCount:
+          min: 1
+          max: 3
+        cpu:
+          min: 1
+          max: 4
+        memory:
+          min: 4Gi
+          max: 8Gi
+        storage:
+          min: 20Gi
+          max: 200Gi
+    - name: data-warm
+      roles: ["data_warm"]
+      resources:
+        nodeCount: { min: 1, max: 2 }
+        memory:    { min: 4Gi, max: 8Gi }
+        storage:   { min: 50Gi, max: 500Gi }
+    - name: ml
+      roles: ["ml"]
+      resources:
+        nodeCount: { min: 0, max: 1 }
+        memory:    { min: 2Gi, max: 8Gi }
+# Observação: NÃO defina resources/count manualmente nos nodeSets governados pelo
+# autoscaler — quem passa a controlar esses valores é o ElasticsearchAutoscaler.

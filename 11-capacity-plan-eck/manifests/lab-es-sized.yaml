@@ -1,0 +1,33 @@
+# Exemplo de dimensionamento consciente (Módulo 11).
+# request == limit de memória (garantida); heap = 50% do request; CPU com request e sem limit.
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: lab-es
+spec:
+  version: 9.4.2
+  nodeSets:
+    - name: default
+      count: 1                     # escale horizontalmente mudando este valor
+      config:
+        node.store.allow_mmap: true
+      podTemplate:
+        spec:
+          containers:
+            - name: elasticsearch
+              env:
+                - name: ES_JAVA_OPTS
+                  value: -Xms3g -Xmx3g       # 50% do requests.memory (6Gi)
+              resources:
+                requests:
+                  memory: 6Gi
+                  cpu: "2"
+                limits:
+                  memory: 6Gi              # == request: memória garantida (evita OOM/eviction)
+                  # sem limits.cpu: permite bursts sem throttling
+      volumeClaimTemplates:
+        - metadata: { name: elasticsearch-data }
+          spec:
+            accessModes: [ReadWriteOnce]
+            resources: { requests: { storage: 30Gi } }
+            storageClassName: local-path   # precisa de allowVolumeExpansion p/ crescer depois

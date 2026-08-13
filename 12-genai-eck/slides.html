@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slides — Módulo 12 · Elastic GenAI</title>
+<style>
+  :root{--bg:#0b1020;--bg2:#111a33;--ink:#e8ecf6;--muted:#9fb0d0;--brand:#00bfb3;--brand2:#fec514;--accent:#1ba9f5;--pink:#ee5396;--card:#16203c;--code:#0a1330;--line:#26355e;--ok:#22c55e;--warn:#f59e0b}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#05070f;color:var(--ink)}
+  .deck{position:fixed;inset:0}
+  .slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;padding:6vh 8vw;background:radial-gradient(1200px 600px at 15% -10%,var(--bg2),var(--bg) 60%);animation:fade .35s ease}
+  .slide.active{display:flex}
+  @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .slide.cover{background:linear-gradient(135deg,#241033 0%,#0b1020 55%,#071b33 100%)}
+  .cover .kicker{color:var(--brand);font-weight:700;letter-spacing:.18em;text-transform:uppercase}
+  .cover h1{font-size:clamp(2.2rem,6vw,4.4rem);margin:.2em 0;line-height:1.05}
+  .cover h1 span{background:linear-gradient(90deg,var(--pink),var(--brand2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .cover .sub{color:var(--muted);font-size:clamp(1rem,2.2vw,1.5rem);max-width:62ch}
+  h2{font-size:clamp(1.6rem,3.6vw,2.6rem);margin:0 0 .5em;line-height:1.1}
+  p,li{font-size:clamp(1rem,1.7vw,1.28rem);line-height:1.5;color:#dbe4f7}
+  ul.clean{list-style:none;padding:0;margin:0}
+  ul.clean li{padding:.28em 0 .28em 1.6em;position:relative}
+  ul.clean li::before{content:"▸";color:var(--brand);position:absolute;left:0;top:.28em}
+  pre{background:var(--code);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:.9rem 1.1rem;overflow:auto;font-size:.92rem}
+  code{font-family:"Cascadia Code",Consolas,Monaco,monospace;color:#c8f5ef}
+  pre .k{color:var(--brand2)}pre .c{color:#6b7ba8}
+  .note{border-radius:10px;padding:.75rem 1.05rem;margin-top:.55em;border-left:4px solid var(--brand);background:rgba(0,191,179,.08)}
+  .note.tip{background:rgba(34,197,94,.10);border-color:var(--ok)}
+  .note.warn{background:rgba(245,158,11,.12);border-color:var(--warn)}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-top:.5em;font-size:1.05rem}
+  .flow .b{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:.5em .8em}
+  .flow .a{color:var(--brand);font-weight:700}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1rem 1.15rem}
+  .card h3{margin:.1em 0 .3em;color:#fff}
+  .foot{position:fixed;bottom:14px;right:18px;display:flex;gap:10px;align-items:center;font-size:.85rem;color:var(--muted)}
+  .foot button{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:.35em .7em;cursor:pointer;font-size:1rem}
+  .foot button:hover{border-color:var(--brand)}
+  .hud{position:fixed;left:0;right:0;bottom:0;height:8px;background:#0a1226}
+  .hud .bar{height:100%;width:0;background:linear-gradient(90deg,var(--pink),var(--brand2));transition:width .3s}
+  .brandmark{position:fixed;top:16px;left:22px;font-weight:700;color:var(--muted);font-size:.85rem}
+  .brandmark b{color:var(--brand)}
+</style>
+</head>
+<body>
+<div class="brandmark"><b>Elastic Stack Total</b> · Edição ECK</div>
+<div class="deck" id="deck">
+
+  <section class="slide cover active">
+    <div class="kicker">Módulo 12 · Finale</div>
+    <h1>Elastic <span>GenAI</span></h1>
+    <p class="sub">Playground (RAG) e Agent Builder com LLM local — sem LocalAI, sem nuvem, tudo no seu ambiente.</p>
+  </section>
+
+  <section class="slide">
+    <h2>A ideia: <span>RAG</span></h2>
+    <div class="flow">
+      <span class="b">Pergunta</span><span class="a">▶</span>
+      <span class="b">Elasticsearch recupera</span><span class="a">▶</span>
+      <span class="b">injeta no prompt</span><span class="a">▶</span>
+      <span class="b">LLM redige</span>
+    </div>
+    <div class="note tip">O Elastic é o <b>cérebro de recuperação</b>; o LLM é o <b>redator</b>. Resposta fundamentada, com fontes.</div>
+  </section>
+
+  <section class="slide">
+    <h2>Dois recursos built-in</h2>
+    <div class="two">
+      <div class="card"><h3>Playground</h3><p>Conversar com seus índices via RAG. Gera a query, injeta no LLM, mostra a query e o código Python.</p></div>
+      <div class="card"><h3>Agent Builder</h3><p>Agentes que respondem <b>e agem</b>: tools, skills, chat, MCP, workflows. Evolução GA do Playground.</p></div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <h2>LLM local via conector OpenAI</h2>
+    <p>O Elastic conecta ao LLM por <b>conector</b>: OpenAI, Azure, Bedrock, Gemini — e <b>LLMs locais compatíveis com OpenAI</b> (Ollama, LM Studio, vLLM).</p>
+    <div class="note warn">Em ECK <b>self-managed</b> não há "Elastic Managed LLM" → o LLM é <b>sempre por conector</b>. O <b>local</b> é o caminho natural.</div>
+  </section>
+
+  <section class="slide">
+    <h2>Conector → Ollama</h2>
+    <pre><code><span class="c"># Stack Management -> Connectors -> OpenAI</span>
+URL:   http://ollama.elastic.svc:11434/v1/chat/completions
+model: <span class="k">llama3.2:1b</span>
+apiKey: ollama   <span class="c"># qualquer valor não-vazio</span></code></pre>
+  </section>
+
+  <section class="slide">
+    <h2>⚠️ Recursos no lab</h2>
+    <ul class="clean">
+      <li>Módulo mais pesado (LLM disputa RAM/CPU)</li>
+      <li>Modelo <b>pequeno</b> (1B/0.5B), nunca 7B+ em 16 GB</li>
+      <li>Rode isolado; ideal 32 GB. LLM no cluster ou na VM host</li>
+    </ul>
+  </section>
+
+  <section class="slide">
+    <h2>No laboratório</h2>
+    <ul class="clean">
+      <li>Subir <b>Ollama</b> (modelo pequeno) + trial + conector</li>
+      <li>Indexar base de conhecimento</li>
+      <li><b>Playground</b>: conversar com os dados via RAG</li>
+      <li><b>Agent Builder</b>: agente com tool de busca</li>
+    </ul>
+  </section>
+
+  <section class="slide">
+    <h2>🎓 Curso concluído!</h2>
+    <p>Do <b>cluster Kubernetes do zero</b> (Módulo 01) ao <b>GenAI com LLM local</b> (Módulo 12) — todo o Elastic Stack, cloud-native, com o operator ECK.</p>
+    <div class="note tip">Próximos passos: semantic search (semantic_text/ELSER), observabilidade com Fleet, e produção real (hot-warm, autoscaling, snapshots).</div>
+  </section>
+
+</div>
+<div class="foot"><button onclick="prev()">◀</button><span id="count">1 / 1</span><button onclick="next()">▶</button></div>
+<div class="hud"><div class="bar" id="bar"></div></div>
+<script>
+  const slides=[...document.querySelectorAll('.slide')];let i=0;
+  function render(){slides.forEach((s,n)=>s.classList.toggle('active',n===i));document.getElementById('count').textContent=(i+1)+' / '+slides.length;document.getElementById('bar').style.width=((i+1)/slides.length*100)+'%';}
+  function next(){i=Math.min(i+1,slides.length-1);render();}
+  function prev(){i=Math.max(i-1,0);render();}
+  document.addEventListener('keydown',e=>{if(['ArrowRight',' ','PageDown'].includes(e.key)){e.preventDefault();next();}if(['ArrowLeft','Backspace','PageUp'].includes(e.key)){e.preventDefault();prev();}if(e.key==='f'){document.documentElement.requestFullscreen?.();}if(e.key==='Home'){i=0;render();}if(e.key==='End'){i=slides.length-1;render();}});
+  render();
+</script>
+</body>
+</html>
