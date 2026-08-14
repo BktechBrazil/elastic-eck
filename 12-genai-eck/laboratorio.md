@@ -4,11 +4,7 @@
 > **Tempo estimado:** 45–60 minutos.
 
 ```bash
-<<<<<<< HEAD
-source ../_assets/versions.env
-=======
 source _assets/versions.env
->>>>>>> validação-de-treinamento
 PASSWORD=$(kubectl -n elastic get secret lab-es-es-elastic-user -o go-template='{{.data.elastic | base64decode}}')
 ```
 
@@ -17,8 +13,6 @@ PASSWORD=$(kubectl -n elastic get secret lab-es-es-elastic-user -o go-template='
 ## Parte A — Subir o LLM local
 
 ### Passo 1 — Ollama no cluster
-<<<<<<< HEAD
-=======
 Caso não tenha o ollama.yaml, cole com este comando:
 ```bash
 mkdir -p manifests
@@ -93,7 +87,6 @@ spec:
 #     curl -s http://localhost:11434/v1/models
 EOF
 ```
->>>>>>> validação-de-treinamento
 
 ```bash
 kubectl apply -f manifests/ollama.yaml
@@ -101,14 +94,10 @@ kubectl -n elastic rollout status deploy/ollama
 # baixar um modelo pequeno:
 kubectl -n elastic exec deploy/ollama -- ollama pull llama3.2:1b
 # validar a API compatível com OpenAI:
-<<<<<<< HEAD
-kubectl -n elastic exec deploy/ollama -- curl -s http://localhost:11434/v1/models
-=======
 # Abra o túnel de porta:
 kubectl -n elastic port-forward service/ollama 11434:11434 &
 # Execute o curl:
 curl -s http://localhost:11434/v1/models
->>>>>>> validação-de-treinamento
 ```
 
 > Alternativa mais leve: rode **Ollama/LM Studio na própria VM host** e aponte o conector para `http://<IP-do-host>:11434`. Assim o LLM não disputa os limites do cluster.

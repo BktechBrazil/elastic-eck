@@ -4,11 +4,7 @@
 > **Tempo estimado:** 25–35 minutos.
 
 ```bash
-<<<<<<< HEAD
-source ../_assets/versions.env
-=======
 source _assets/versions.env
->>>>>>> validação-de-treinamento
 PASSWORD=$(kubectl -n elastic get secret lab-es-es-elastic-user -o go-template='{{.data.elastic | base64decode}}')
 kubectl -n elastic port-forward service/lab-es-es-http 9200 &
 alias es="curl -sk -u elastic:$PASSWORD https://localhost:9200"
@@ -46,10 +42,7 @@ es "/_cluster/health?pretty" | grep -E 'active_shards|number_of_nodes'
 ## Parte B — Dimensionamento vertical consciente
 
 ### Passo 4 — Aplicar recursos dimensionados
-
-<<<<<<< HEAD
-=======
-caso não possua o manifests/lab-es-sized.yaml, execute o comando abaixo:
+Caso não possua o manifests/lab-es-sized.yaml, execute o comando abaixo:
 
 ```bash
 mkdir -p manifests
@@ -90,7 +83,6 @@ spec:
 EOF
 ```
 
->>>>>>> validação-de-treinamento
 Aplique o exemplo com memória garantida e heap em 50% (6Gi / heap 3g):
 
 ```bash
