@@ -5,7 +5,11 @@ kind: Elasticsearch
 metadata:
   name: lab-es
 spec:
+<<<<<<< HEAD
   version: 9.4.2
+=======
+  version: 9.4.4 # no módulo 10 atualizamos para 9.4.4
+>>>>>>> validação-de-treinamento
   nodeSets:
     - name: default
       count: 1                     # escale horizontalmente mudando este valor

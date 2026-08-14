@@ -4,7 +4,11 @@
 > **Tempo estimado:** 45–60 minutos.
 
 ```bash
+<<<<<<< HEAD
 source ../_assets/versions.env
+=======
+source _assets/versions.env
+>>>>>>> validação-de-treinamento
 PASSWORD=$(kubectl -n elastic get secret lab-es-es-elastic-user -o go-template='{{.data.elastic | base64decode}}')
 ```
 
@@ -13,6 +17,83 @@ PASSWORD=$(kubectl -n elastic get secret lab-es-es-elastic-user -o go-template='
 ## Parte A — Subir o LLM local
 
 ### Passo 1 — Ollama no cluster
+<<<<<<< HEAD
+=======
+Caso não tenha o ollama.yaml, cole com este comando:
+```bash
+mkdir -p manifests
+cat << 'EOF' > manifests/ollama.yaml
+# LLM local (Ollama) rodando NO cluster — expõe API compatível com OpenAI (Módulo 12).
+# Endpoint p/ o conector do Kibana: http://ollama.elastic.svc:11434/v1
+# ATENÇÃO (16 GB): pesado. Use modelo pequeno (llama3.2:1b). Ideal 32 GB. Rode isolado.
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-models
+  namespace: elastic
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 15Gi
+  storageClassName: local-path
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: elastic
+  labels: { app: ollama }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: ollama }
+  template:
+    metadata:
+      labels: { app: ollama }
+    spec:
+      containers:
+        - name: ollama
+          image: ollama/ollama:latest
+          ports:
+            - containerPort: 11434
+          env:
+            - name: OLLAMA_HOST
+              value: "0.0.0.0"
+          resources:
+            requests:
+              memory: 3Gi
+              cpu: "2"
+            limits:
+              memory: 5Gi
+          volumeMounts:
+            - name: models
+              mountPath: /root/.ollama
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: ollama-models
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  namespace: elastic
+spec:
+  selector: { app: ollama }
+  ports:
+    - port: 11434
+      targetPort: 11434
+  type: ClusterIP
+# Depois de subir, baixe um modelo pequeno:
+#   kubectl -n elastic exec deploy/ollama -- ollama pull llama3.2:1b
+# Teste a API OpenAI-compatível:
+#   kubectl -n elastic exec deploy/ollama -- \
+#     curl -s http://localhost:11434/v1/models
+EOF
+```
+>>>>>>> validação-de-treinamento
 
 ```bash
 kubectl apply -f manifests/ollama.yaml
@@ -20,7 +101,14 @@ kubectl -n elastic rollout status deploy/ollama
 # baixar um modelo pequeno:
 kubectl -n elastic exec deploy/ollama -- ollama pull llama3.2:1b
 # validar a API compatível com OpenAI:
+<<<<<<< HEAD
 kubectl -n elastic exec deploy/ollama -- curl -s http://localhost:11434/v1/models
+=======
+# Abra o túnel de porta:
+kubectl -n elastic port-forward service/ollama 11434:11434 &
+# Execute o curl:
+curl -s http://localhost:11434/v1/models
+>>>>>>> validação-de-treinamento
 ```
 
 > Alternativa mais leve: rode **Ollama/LM Studio na própria VM host** e aponte o conector para `http://<IP-do-host>:11434`. Assim o LLM não disputa os limites do cluster.

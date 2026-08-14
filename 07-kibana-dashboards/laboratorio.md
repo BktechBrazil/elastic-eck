@@ -35,13 +35,15 @@ Nesta etapa, você irá verificar se os Data Views gerados automaticamente pela 
 
 ### Passo 2 — Explorar os web logs
 
-Abra **Discover**, selecione o Data View `kibana_sample_data_logs` e ajuste o tempo (canto superior direito) para "Last 7 days" (ou "Sample data" range). Aplique KQL:
+Abra **Discover**, selecione o Data View `kibana_sample_data_logs` e ajuste o tempo (canto superior direito) para "Last 7 days" (ou "Sample data" range). 
+Aplique KQL:
 
 ```text
-response.keyword : "404" and url : *login*
+response : 404 AND request : *kibana*
 ```
 
-Adicione as colunas `url`, `response`, `geo.dest`. Você está **investigando** dados.
+Adicione as colunas `url`, `response`, `geo.dest`. 
+Você está **investigando** dados.
 
 ## Parte B — Lens: três visualizações do eCommerce
 

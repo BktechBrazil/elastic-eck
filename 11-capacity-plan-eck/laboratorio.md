@@ -4,7 +4,11 @@
 > **Tempo estimado:** 25–35 minutos.
 
 ```bash
+<<<<<<< HEAD
 source ../_assets/versions.env
+=======
+source _assets/versions.env
+>>>>>>> validação-de-treinamento
 PASSWORD=$(kubectl -n elastic get secret lab-es-es-elastic-user -o go-template='{{.data.elastic | base64decode}}')
 kubectl -n elastic port-forward service/lab-es-es-http 9200 &
 alias es="curl -sk -u elastic:$PASSWORD https://localhost:9200"
@@ -43,6 +47,50 @@ es "/_cluster/health?pretty" | grep -E 'active_shards|number_of_nodes'
 
 ### Passo 4 — Aplicar recursos dimensionados
 
+<<<<<<< HEAD
+=======
+caso não possua o manifests/lab-es-sized.yaml, execute o comando abaixo:
+
+```bash
+mkdir -p manifests
+cat << 'EOF' > manifests/lab-es-sized.yaml
+# Exemplo de dimensionamento consciente (Módulo 11).
+# request == limit de memória (garantida); heap = 50% do request; CPU com request e sem limit.
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: lab-es
+spec:
+  version: 9.4.4
+  nodeSets:
+    - name: default
+      count: 1                     # escale horizontalmente mudando este valor
+      config:
+        node.store.allow_mmap: true
+      podTemplate:
+        spec:
+          containers:
+            - name: elasticsearch
+              env:
+                - name: ES_JAVA_OPTS
+                  value: -Xms3g -Xmx3g       # 50% do requests.memory (6Gi)
+              resources:
+                requests:
+                  memory: 6Gi
+                  cpu: "2"
+                limits:
+                  memory: 6Gi              # == request: memória garantida (evita OOM/eviction)
+                  # sem limits.cpu: permite bursts sem throttling
+      volumeClaimTemplates:
+        - metadata: { name: elasticsearch-data }
+          spec:
+            accessModes: [ReadWriteOnce]
+            resources: { requests: { storage: 30Gi } }
+            storageClassName: local-path   # precisa de allowVolumeExpansion p/ crescer depois
+EOF
+```
+
+>>>>>>> validação-de-treinamento
 Aplique o exemplo com memória garantida e heap em 50% (6Gi / heap 3g):
 
 ```bash
