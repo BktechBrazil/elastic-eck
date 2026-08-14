@@ -19,7 +19,7 @@ Nesta etapa, você irá verificar se os Data Views gerados automaticamente pela 
 1. **Acessar o menu de gerenciamento:**
    No menu lateral esquerdo do Kibana, navegue até a seção de administração: **Management** → **Stack Management**.
 
-   ![Página Inicial - Kibana](prints%20treinamentos/passo1.1.png.png)
+   ![Página Inicial - Kibana](prints%20treinamentos/passo1.1.png)
 
 2. **Abrir a gestão de Data Views:**
    Dentro da tela do *Stack Management*, localize o menu lateral esquerdo e clique em **Data Views**.
