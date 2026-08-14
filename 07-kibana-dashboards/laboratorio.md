@@ -30,12 +30,16 @@ Nesta etapa, você irá verificar se os Data Views gerados automaticamente pela 
    Certifique-se de que os dois Data Views criados pelo conjunto de amostra estão visíveis na lista:
    * `kibana_sample_data_ecommerce` (Dados de vendas do e-commerce)
    * `kibana_sample_data_logs` (Logs de tráfego do servidor web)
+   ![Conjunto de dados - Kibana](prints%20treinamentos/passo1.3.png)
 
 > 💡 **Dica (Criação Manual):** Se no futuro precisar conectar um novo índice sem conjunto de dados pré-definido, clique em **Create data view**, insira o padrão do índice (ex: `filebeat-*`) e selecione o campo temporal correto (`order_date` para vendas ou `@timestamp` para eventos/logs).
 
 ### Passo 2 — Explorar os web logs
 
 Abra **Discover**, selecione o Data View `kibana_sample_data_logs` e ajuste o tempo (canto superior direito) para "Last 7 days" (ou "Sample data" range). 
+
+![Discover - Kibana](prints%20treinamentos/passo2.png)
+
 Aplique KQL:
 
 ```text
