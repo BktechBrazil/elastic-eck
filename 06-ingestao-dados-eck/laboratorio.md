@@ -76,7 +76,6 @@ spec:
         parsers:
           - container: ~
         prospector.scanner.symlinks: true
-
     processors:
       - add_kubernetes_metadata:
           host: ${NODE_NAME}
