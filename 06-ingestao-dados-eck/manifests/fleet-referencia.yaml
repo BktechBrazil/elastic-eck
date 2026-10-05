@@ -30,6 +30,9 @@
 #             - name: system-1
 #               package: { name: system }
 # ------------------------------------------------------------------------------
+# Elastic Agent gerenciado por Fleet no ECK.
+# Fleet Server (Deployment) + Elastic Agent (DaemonSet) enrolado nele.
+# Namespace: elastic. Requer as configurações xpack.fleet.* no Kibana (lab-kb).
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -60,6 +63,60 @@ subjects:
 roleRef:
   kind: ClusterRole
   name: fleet-server
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: elastic-agent
+  namespace: elastic
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: elastic-agent
+rules:
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - namespaces
+      - events
+      - pods
+      - services
+      - configmaps
+      - serviceaccounts
+      - persistentvolumes
+      - persistentvolumeclaims
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["nodes/stats"]
+    verbs: ["get"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets", "deployments", "statefulsets", "daemonsets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["storageclasses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "create", "update"]
+  - nonResourceURLs: ["/metrics"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: elastic-agent
+subjects:
+  - kind: ServiceAccount
+    name: elastic-agent
+    namespace: elastic
+roleRef:
+  kind: ClusterRole
+  name: elastic-agent
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: agent.k8s.elastic.co/v1alpha1
@@ -107,4 +164,3 @@ spec:
         dnsPolicy: ClusterFirstWithHostNet
         securityContext:
           runAsUser: 0
-# (reutiliza o ServiceAccount/RBAC "elastic-agent" do elastic-agent-standalone.yaml)
