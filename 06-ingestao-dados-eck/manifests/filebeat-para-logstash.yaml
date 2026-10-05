@@ -16,6 +16,9 @@ rules:
   - apiGroups: [""]
     resources: ["namespaces", "pods", "nodes"]
     verbs: ["get", "watch", "list"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -64,6 +67,7 @@ spec:
       spec:
         serviceAccountName: filebeat-ls
         automountServiceAccountToken: true
+        terminationGracePeriodSeconds: 30
         hostNetwork: true
         dnsPolicy: ClusterFirstWithHostNet
         securityContext:
@@ -76,6 +80,11 @@ spec:
                 cpu: 100m
               limits:
                 memory: 300Mi
+            env:
+              - name: NODE_NAME
+                valueFrom:
+                  fieldRef:
+                    fieldPath: spec.nodeName
             volumeMounts:
               - name: varlogcontainers
                 mountPath: /var/log/containers
