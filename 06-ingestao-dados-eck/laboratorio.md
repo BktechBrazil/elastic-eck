@@ -69,9 +69,14 @@ spec:
     name: lab-kb
   config:
     filebeat.inputs:
-      - type: container
+      - type: filestream
+        id: kubernetes-container-logs
         paths:
           - /var/log/containers/*.log
+        parsers:
+          - container: ~
+        prospector.scanner.symlinks: true
+
     processors:
       - add_kubernetes_metadata:
           host: ${NODE_NAME}
