@@ -1,9 +1,15 @@
-# Kibana do laboratório (lab-kb) ligado ao cluster lab-es — Módulo 02
 apiVersion: kibana.k8s.elastic.co/v1
 kind: Kibana
 metadata:
   name: lab-kb
+  namespace: elastic
 spec:
+  version: 9.4.2
+  count: 1
+  elasticsearchRef:
+    name: lab-es
+  secureSettings:
+    - secretName: kibana-encryption-keys
   config:
     xpack.fleet.agents.elasticsearch.hosts: ["https://lab-es-es-http.elastic.svc:9200"]
     xpack.fleet.agents.fleet_server.hosts: ["https://fleet-server-agent-http.elastic.svc:8220"]
@@ -17,29 +23,27 @@ spec:
     xpack.fleet.agentPolicies:
       - name: Fleet Server on ECK policy
         id: eck-fleet-server
-        is_default_fleet_server: true
+        namespace: default
+        is_managed: true
+        monitoring_enabled:
+          - logs
+          - metrics
+        unenroll_timeout: 900
         package_policies:
           - name: fleet_server-1
+            id: fleet_server-1
             package:
               name: fleet_server
       - name: Elastic Agent on ECK policy
         id: eck-agent
-        is_default: true
+        namespace: default
+        is_managed: true
+        monitoring_enabled:
+          - logs
+          - metrics
+        unenroll_timeout: 900
         package_policies:
           - name: system-1
+            id: system-1
             package:
               name: system
-  version: 9.4.2
-  count: 1
-  elasticsearchRef:
-    name: lab-es
-  podTemplate:
-    spec:
-      containers:
-        - name: kibana
-          resources:
-            requests:
-              memory: 1Gi
-              cpu: 500m
-            limits:
-              memory: 2Gi
