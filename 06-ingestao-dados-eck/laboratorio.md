@@ -303,14 +303,71 @@ Leia [`manifests/fleet-referencia.yaml`](manifests/fleet-referencia.yaml). Difer
 3. Sobe-se o **Agent** com `fleetServerRef` — ele se matricula e recebe políticas pela **UI do Fleet** no Kibana.
 4. Lmebre de ter o arquivo **"fleet-referencia.yaml"** na máquina local e depois aplicar no cluster.
 
+Passo 1 — Chaves de criptografia do Kibana (faça antes de tudo)
+
+Esse passo não está no quickstart, mas é o que evita o erro Unable to decrypt attribute ... of saved object que você já enfrentou. Sem chaves fixas, o ECK gera novas a cada recriação do pod e os saved objects do Fleet ficam ilegíveis.
+
 ```bash
-# depois de ajustar o Kibana com xpack.fleet.*:
-kubectl apply -f manifests/fleet-referencia.yaml
-kubectl -n elastic get agent                      # fleet-server e elastic-agent-fleet
-# no Kibana: Management -> Fleet -> Agents (o agente aparece "Healthy")
+kubectl -n elastic create secret generic kibana-encryption-keys \
+  --from-literal=xpack.encryptedSavedObjects.encryptionKey="$(openssl rand -hex 16)" \
+  --from-literal=xpack.reporting.encryptionKey="$(openssl rand -hex 16)" \
+  --from-literal=xpack.security.encryptionKey="$(openssl rand -hex 16)"
 ```
 
+Passo 2 — Kibana com as configurações do Fleet 
+```bash
+kubectl apply -f manifests/kibana.yaml
+kubectl -n elastic get kibana lab-kb -w
+```
+
+Passo 3 — Fleet Server e Elastic Agent 
+
+```bash
+kubectl apply -f manifests/fleet-referecia.yml
+```
+
+Passo 4 — Valide
+```bash
+kubectl -n elastic get agent
+
+NAME                  HEALTH   AVAILABLE   EXPECTED   VERSION   AGE
+elastic-agent-fleet   green    3           3          9.4.2     14s
+fleet-server          green    1           1          9.4.2     19s
+```
+
+
 > **Recursos:** o Fleet Server + Agent + as integrations pesam. Em 16 GB, faça este lab com o Filebeat/Logstash já removidos.
+
+
+**Troubleshooting**
+
+Agent policy "<id>" not found — o bloco xpack.fleet.agentPolicies não chegou ao Kibana, ou o policyID não bate com nenhum id declarado. Verifique com:
+
+```bash
+kubectl -n elastic get kibana lab-kb -o yaml | grep -A25 xpack.fleet
+``` 
+
+Unable to decrypt attribute ... of saved object — chave de criptografia mudou. Garanta o secureSettings do passo 1 e remova o saved object corrompido antes de reiniciar.
+
+Waiting for Kibana credentials / Association backend for kibana is not configured — transitórios na subida. Se o Health chegar a green, pode ignorar. Se persistirem, confira se o Kibana está green e se kibanaRef.name bate com o nome do recurso.
+
+Nenhum pod é criado e nenhum erro aparece — comportamento esperado enquanto o enrollment não conclui. O ECK só cria o Deployment depois de obter o token no Kibana. O motivo está sempre em:
+
+```bash
+kubectl -n elastic describe agent fleet-server | tail -20
+``` 
+Para forçar o operador a refazer o enrollment:
+
+```bash
+kubectl -n elastic delete agent fleet-server elastic-agent-fleet
+kubectl apply -f manifests/fleet-referencia.yml
+``` 
+Atenção ao Filebeat
+Se o elastic-agent-fleet coletar logs de containers (via integração Kubernetes ou a policy eck-agent) e o Filebeat continuar ativo, os logs chegarão duplicados. Mantenha um dos dois:
+
+```bash
+kubectl -n elastic get beat
+``` 
 
 ---
 
