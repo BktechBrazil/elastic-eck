@@ -1,69 +1,5 @@
-# ==============================================================================
-# REFERÊNCIA / AVANÇADO — Elastic Agent gerenciado por FLEET no ECK.
-# O Fleet Server é apenas outro recurso Agent (mode: fleet, fleetServerEnabled).
-# ==============================================================================
-# IMPORTANTE: para o Fleet funcionar, o Kibana precisa das configurações abaixo.
-# Adicione ao spec do seu Kibana (lab-kb) e reaplique:
-#
-#   spec:
-#     config:
-#       xpack.fleet.agents.elasticsearch.hosts: ["https://lab-es-es-http.elastic.svc:9200"]
-#       xpack.fleet.agents.fleet_server.hosts:  ["https://fleet-server-agent-http.elastic.svc:8220"]
-#       xpack.fleet.packages:
-#         - name: system
-#           version: latest
-#         - name: elastic_agent
-#           version: latest
-#         - name: fleet_server
-#           version: latest
-#       xpack.fleet.agentPolicies:
-#         - name: Fleet Server on ECK policy
-#           id: eck-fleet-server
-#           is_default_fleet_server: true
-#           package_policies:
-#             - name: fleet_server-1
-#               package: { name: fleet_server }
-#         - name: Elastic Agent on ECK policy
-#           id: eck-agent
-#           is_default: true
-#           package_policies:
-#             - name: system-1
-#               package: { name: system }
-# ------------------------------------------------------------------------------
-# Elastic Agent gerenciado por Fleet no ECK.
-# Fleet Server (Deployment) + Elastic Agent (DaemonSet) enrolado nele.
-# Namespace: elastic. Requer as configurações xpack.fleet.* no Kibana (lab-kb).
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: fleet-server
-  namespace: elastic
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: fleet-server
-rules:
-  - apiGroups: [""]
-    resources: ["pods", "namespaces", "nodes"]
-    verbs: ["get", "watch", "list"]
-  - apiGroups: ["coordination.k8s.io"]
-    resources: ["leases"]
-    verbs: ["get", "create", "update"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: fleet-server
-subjects:
-  - kind: ServiceAccount
-    name: fleet-server
-    namespace: elastic
-roleRef:
-  kind: ClusterRole
-  name: fleet-server
-  apiGroup: rbac.authorization.k8s.io
+# Fleet Server (Deployment) + Elastic Agent (DaemonSet) gerenciados pelo ECK.
+# O operador cuida de service token, enrollment tokens e TLS.
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -78,33 +14,19 @@ metadata:
 rules:
   - apiGroups: [""]
     resources:
+      - pods
       - nodes
       - namespaces
-      - events
-      - pods
-      - services
-      - configmaps
-      - serviceaccounts
-      - persistentvolumes
-      - persistentvolumeclaims
-    verbs: ["get", "list", "watch"]
-  - apiGroups: [""]
-    resources: ["nodes/stats"]
-    verbs: ["get"]
-  - apiGroups: ["apps"]
-    resources: ["replicasets", "deployments", "statefulsets", "daemonsets"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: ["batch"]
-    resources: ["jobs", "cronjobs"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: ["storage.k8s.io"]
-    resources: ["storageclasses"]
-    verbs: ["get", "list", "watch"]
+    verbs: ["get", "watch", "list"]
   - apiGroups: ["coordination.k8s.io"]
     resources: ["leases"]
     verbs: ["get", "create", "update"]
-  - nonResourceURLs: ["/metrics"]
-    verbs: ["get"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["list", "watch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -137,7 +59,7 @@ spec:
     replicas: 1
     podTemplate:
       spec:
-        serviceAccountName: fleet-server
+        serviceAccountName: elastic-agent
         automountServiceAccountToken: true
         securityContext:
           runAsUser: 0
@@ -160,7 +82,8 @@ spec:
       spec:
         serviceAccountName: elastic-agent
         automountServiceAccountToken: true
-        hostNetwork: true
-        dnsPolicy: ClusterFirstWithHostNet
         securityContext:
           runAsUser: 0
+        volumes:
+          - name: agent-data
+            emptyDir: {}
