@@ -1,5 +1,5 @@
 # Fleet Server (Deployment) + Elastic Agent (DaemonSet) gerenciados pelo ECK.
-# O operador cuida de service token, enrollment tokens e TLS.
+# O operador cuida de service token, enrollment tokens e TLS. 
 ---
 apiVersion: v1
 kind: ServiceAccount
